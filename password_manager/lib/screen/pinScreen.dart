@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:password_manager/routes.dart';
 import 'package:password_manager/screen/homeScreen.dart';
+import 'package:password_manager/utills/snakebar.dart';
 
 class PinScreen extends StatefulWidget {
   @override
@@ -49,33 +50,23 @@ class _PinScreenState extends State<PinScreen> {
           );
         } else {
           // PIN is incorrect
-          _showCustomSnackBar('Incorrect PIN. Please try again.', Colors.red);
+          CustomSnackBar.show(
+              context, 'Incorrect PIN. Please try again.', Colors.red);
         }
       } catch (e) {
-        _showCustomSnackBar('An error occurred. Please try again.', Colors.red);
+        CustomSnackBar.show(
+            context, 'An error occurred. Please try again.', Colors.red);
       }
     } else {
-      _showCustomSnackBar('User not logged in.', Colors.red);
+      CustomSnackBar.show(context, 'User not logged in.', Colors.red);
     }
 
     setState(() => isLoading = false);
   }
 
-  void _showCustomSnackBar(String message, Color backgroundColor) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        margin: EdgeInsets.all(16),
-      ),
-    );
+  void _logout() async {
+    await _auth.signOut();
+    Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 
   @override
@@ -134,6 +125,11 @@ class _PinScreenState extends State<PinScreen> {
               child: CircularProgressIndicator(),
             ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _logout,
+        icon: Icon(Icons.logout),
+        label: Text('Logout'),
       ),
     );
   }

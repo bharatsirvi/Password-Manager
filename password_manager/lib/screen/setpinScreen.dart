@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:password_manager/routes.dart';
 import 'package:password_manager/services/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:password_manager/utills/snakebar.dart';
 
 class SetPinScreen extends StatefulWidget {
   const SetPinScreen({super.key});
@@ -22,28 +23,45 @@ class _SetPinScreenState extends State<SetPinScreen> {
       if (_setPinController.text == _confirmPinController.text) {
         User? user = _auth.currentUser;
         if (user != null) {
-          await _userService.saveUserData(
+          await _userService.updateUserPin(
             user.uid,
-            user.phoneNumber ?? '',
-            user.displayName ?? '',
             _setPinController.text,
           );
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('PIN set successfully!')),
-          );
+          CustomSnackBar.show(context, 'PIN set successfully!', Colors.green);
           // Navigate to Home or Dashboard
-          Navigator.pushNamed(context, AppRoutes.login);
+          Navigator.pushNamed(context, AppRoutes.home);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('User not logged in.')),
-          );
+          CustomSnackBar.show(context, 'User not logged in.', Colors.red);
         }
       } else {
+        CustomSnackBar.show(
+            context, 'PINs do not match. Try again.', Colors.red);
+      }
+    }
+  }
+
+  void _deleteUser() async {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      try {
+        await _userService.deleteUserData(user.uid);
+        await user.delete();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('PINs do not match. Try again.')),
+          const SnackBar(content: Text('User deleted due to no PIN set.')),
+        );
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting user: $e')),
         );
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _deleteUser();
+    super.dispose();
   }
 
   @override

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:otp_text_field/otp_text_field.dart';
 import 'package:otp_text_field/style.dart';
 import 'package:password_manager/routes.dart';
+import 'package:password_manager/utills/snakebar.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 
@@ -42,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         errorMessage = 'An error occurred. Please try again.';
       }
-      _showCustomSnackBar(errorMessage, Colors.red);
+      CustomSnackBar.show(context, errorMessage, Colors.red);
       setState(() => isLoading = false);
     }
   }
@@ -59,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       },
       onError: (errorMsg) {
-        _showCustomSnackBar(errorMsg, Colors.red);
+        CustomSnackBar.show(context, errorMsg, Colors.red);
         setState(() => isLoading = false);
       },
     );
@@ -75,10 +76,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (credential?.user != null) {
       // **Login Successful, Navigate to Home**
-      _showCustomSnackBar('Login Successful!', Colors.green);
+      CustomSnackBar.show(context, 'Login Successful!', Colors.green);
       Navigator.pushReplacementNamed(context, AppRoutes.home);
     } else {
-      _showCustomSnackBar('Invalid OTP', Colors.red);
+      CustomSnackBar.show(context, 'Invalid OTP', Colors.red);
     }
 
     setState(() => isLoading = false);

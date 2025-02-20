@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:otp_text_field/otp_text_field.dart';
 import 'package:otp_text_field/style.dart';
 import 'package:password_manager/routes.dart';
+import 'package:password_manager/utills/snakebar.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 
@@ -22,8 +23,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final UserService _userService = UserService();
 
   // Send OTP
-  void _sendOTP() {
+  void _sendOTP() async {
     setState(() => isLoading = true);
+
+    print(
+        "phone...............................: ${phoneController.text.trim()}");
+    bool phoneExists = await _userService
+        .doesPhoneNumberExist("+91${phoneController.text.trim()}");
+
+    if (phoneExists) {
+      CustomSnackBar.show(
+          context, 'Phone number already exists. Please login.', Colors.red);
+      setState(() => isLoading = false);
+      return;
+    }
+
     _authService.sendOTP(
       phoneNumber: '+91${phoneController.text.trim()}',
       onCodeSent: (verId) {
@@ -34,9 +48,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         });
       },
       onError: (errorMsg) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg)),
-        );
+        CustomSnackBar.show(context, errorMsg, Colors.red);
         setState(() => isLoading = false);
       },
     );
@@ -50,16 +62,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
       otp: otp,
     );
 
-    if (credential?.user != null) {
-      // Save User Data
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration Successful!')),
+    if (credential != null && credential.user != null) {
+      await _userService.saveUserData(
+        credential.user!.uid,
+        "+91${phoneController.text.trim()}",
+        nameController.text.trim(),
+        '', // Assuming you don't have a password at this stage
       );
+
+      CustomSnackBar.show(
+          context, 'Registration Successful!', Color(0xFF00FF7F));
       Navigator.pushReplacementNamed(context, AppRoutes.setPin);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid OTP')),
-      );
+      CustomSnackBar.show(context, 'Invalid OTP', Colors.red);
     }
 
     setState(() => isLoading = false);
