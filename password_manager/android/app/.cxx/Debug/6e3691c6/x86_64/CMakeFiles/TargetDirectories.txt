@@ -1,0 +1,2 @@
+/Users/bharatkumar/Documents/Projects/PasswordManager/password_manager/android/app/.cxx/Debug/6e3691c6/x86_64/CMakeFiles/edit_cache.dir
+/Users/bharatkumar/Documents/Projects/PasswordManager/password_manager/android/app/.cxx/Debug/6e3691c6/x86_64/CMakeFiles/rebuild_cache.dir

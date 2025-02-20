@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/Users/bharatkumar/Documents/FlutterDev/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/bharatkumar/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/bharatkumar/Documents/Projects/PasswordManager/password_manager/android/app/.cxx/RelWithDebInfo/2a5f136k/arm64-v8a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/bharatkumar/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/bharatkumar/Documents/Projects/PasswordManager/password_manager/android/app/.cxx/RelWithDebInfo/2a5f136k/arm64-v8a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}
