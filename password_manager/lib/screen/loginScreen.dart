@@ -76,30 +76,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (credential?.user != null) {
       // **Login Successful, Navigate to Home**
-      CustomSnackBar.show(context, 'Login Successful!', Colors.green);
-      Navigator.pushReplacementNamed(context, AppRoutes.home);
+
+      Navigator.pushReplacementNamed(context, AppRoutes.navigation);
     } else {
       CustomSnackBar.show(context, 'Invalid OTP', Colors.red);
     }
 
     setState(() => isLoading = false);
-  }
-
-  void _showCustomSnackBar(String message, Color backgroundColor) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        margin: EdgeInsets.all(16),
-      ),
-    );
   }
 
   @override

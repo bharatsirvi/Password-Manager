@@ -27,9 +27,10 @@ class _SetPinScreenState extends State<SetPinScreen> {
             user.uid,
             _setPinController.text,
           );
-          CustomSnackBar.show(context, 'PIN set successfully!', Colors.green);
+          CustomSnackBar.show(
+              context, 'PIN set successfully!', Color(0xFF00FF7F));
           // Navigate to Home or Dashboard
-          Navigator.pushNamed(context, AppRoutes.home);
+          Navigator.pushNamed(context, AppRoutes.navigation);
         } else {
           CustomSnackBar.show(context, 'User not logged in.', Colors.red);
         }
@@ -46,14 +47,10 @@ class _SetPinScreenState extends State<SetPinScreen> {
       try {
         await _userService.deleteUserData(user.uid);
         await user.delete();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User deleted due to no PIN set.')),
-        );
+
         Navigator.pushReplacementNamed(context, AppRoutes.login);
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error deleting user: $e')),
-        );
+        CustomSnackBar.show(context, 'Please try again.', Colors.red);
       }
     }
   }

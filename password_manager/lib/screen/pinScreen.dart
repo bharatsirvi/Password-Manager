@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:password_manager/routes.dart';
 import 'package:password_manager/screen/homeScreen.dart';
+import 'package:password_manager/screen/navigationScreen.dart';
 import 'package:password_manager/utills/snakebar.dart';
 
 class PinScreen extends StatefulWidget {
@@ -38,7 +39,7 @@ class _PinScreenState extends State<PinScreen> {
             context,
             PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) =>
-                  HomeScreen(),
+                  BottomNavigation(),
               transitionsBuilder:
                   (context, animation, secondaryAnimation, child) {
                 return FadeTransition(
