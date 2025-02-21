@@ -225,9 +225,6 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                                   setState(() {
                                     generatedPassword = _generatePassword();
                                   });
-                                } else {
-                                  CustomSnackBar.show(context,
-                                      'Please enter a platform.', Colors.red);
                                 }
                               },
                               icon: Icon(Icons.vpn_key),
@@ -248,8 +245,8 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                const Color.fromARGB(255, 0, 142, 31),
-                                const Color.fromARGB(255, 96, 255, 38)
+                                const Color.fromARGB(255, 4, 154, 9),
+                                const Color.fromARGB(255, 1, 138, 10)
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
@@ -261,11 +258,13 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Generated Password',
+                                'Copy & Click On Save',
                                 style: TextStyle(
                                     fontSize: 16,
+                                    fontFamily: 'Tenada',
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.blueGrey.shade900),
+                                    color:
+                                        const Color.fromARGB(255, 26, 27, 28)),
                               ),
                               SizedBox(height: 10),
                               Row(
@@ -299,8 +298,8 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    const Color.fromARGB(255, 1, 11, 23),
-                                    const Color.fromARGB(255, 16, 131, 224)
+                                    const Color.fromARGB(255, 0, 105, 191),
+                                    const Color.fromARGB(255, 0, 119, 199),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,

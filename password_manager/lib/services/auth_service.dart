@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:password_manager/utills/snakebar.dart';
 
 enum VerificationResult {
   userNotFound,
@@ -36,7 +37,7 @@ class AuthService {
       }
       return VerificationResult.success; // Credentials are correct
     } catch (e) {
-      print("Error verifying credentials: $e");
+      print("Error verifying phone and password: $e");
       return VerificationResult.error; // Error occurred
     }
   }
@@ -62,7 +63,7 @@ class AuthService {
         codeAutoRetrievalTimeout: (String verificationId) {},
       );
     } catch (e) {
-      onError(e.toString());
+      return onError("Error sending OTP");
     }
   }
 
@@ -78,7 +79,6 @@ class AuthService {
       );
       return await _auth.signInWithCredential(credential);
     } catch (e) {
-      print("Error verifying OTP: $e");
       return null;
     }
   }

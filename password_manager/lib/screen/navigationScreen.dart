@@ -16,6 +16,7 @@ class _BottomNavigationState extends State<BottomNavigation> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   int _selectedIndex = 0;
   String _appBarTitle = 'Vaultix';
+  final PageController _pageController = PageController();
 
   void _logout() async {
     await _auth.signOut();
@@ -27,6 +28,11 @@ class _BottomNavigationState extends State<BottomNavigation> {
       _selectedIndex = index;
       _appBarTitle = index == 0 ? 'Vaultix' : 'Profile';
     });
+    _pageController.animateToPage(
+      index,
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   void _showLogoutConfirmationDialog() {
@@ -94,7 +100,16 @@ class _BottomNavigationState extends State<BottomNavigation> {
               ],
             )
           : null, // Hide AppBar when _selectedIndex is not 0
-      body: _widgetOptions.elementAt(_selectedIndex),
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _selectedIndex = index;
+            _appBarTitle = index == 0 ? 'Vaultix' : 'Profile';
+          });
+        },
+        children: _widgetOptions,
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: const Color.fromARGB(255, 2, 36, 76), // Dark blue color

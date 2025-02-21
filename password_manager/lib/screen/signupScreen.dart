@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:otp_text_field/otp_text_field.dart';
 import 'package:otp_text_field/style.dart';
 import 'package:password_manager/routes.dart';
+import 'package:password_manager/screen/loginScreen.dart';
 import 'package:password_manager/utills/snakebar.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
@@ -14,6 +15,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String verificationId = '';
   bool isOTPSent = false;
   bool isLoading = false;
@@ -24,6 +26,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // Send OTP
   void _sendOTP() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     setState(() => isLoading = true);
 
     print(
@@ -80,6 +86,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => isLoading = false);
   }
 
+  void _navigateToLogin() {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => LoginScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.ease;
+
+          var tween =
+              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,97 +116,112 @@ class _RegisterScreenState extends State<RegisterScreen> {
           SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(height: 50),
-                  Image.asset(
-                    'assets/images/logobig.png',
-                    height: 200,
-                  ),
-                  SizedBox(height: 20),
-                  SizedBox(height: 50),
-                  if (!isOTPSent) ...[
-                    TextField(
-                      controller: nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Enter Name',
-                        border: OutlineInputBorder(),
-                      ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(height: 50),
+                    Image.asset(
+                      'assets/images/logobig.png',
+                      height: 200,
                     ),
                     SizedBox(height: 20),
-                    TextField(
-                      controller: phoneController,
-                      keyboardType: TextInputType.phone,
-                      maxLength: 10,
-                      decoration: InputDecoration(
-                        labelText: 'Enter Mobile Number',
-                        prefixText: '+91 ',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _sendOTP,
-                      style: ElevatedButton.styleFrom(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 100, vertical: 15),
-                        textStyle: TextStyle(fontSize: 18),
-                      ),
-                      child: Text('Send OTP'),
-                    ),
-                    SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("Already have an account?"),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context, AppRoutes.login);
-                          },
-                          child: Text(
-                            'Login',
-                            style: TextStyle(color: Colors.green),
-                          ),
+                    SizedBox(height: 50),
+                    if (!isOTPSent) ...[
+                      TextFormField(
+                        controller: nameController,
+                        decoration: InputDecoration(
+                          labelText: 'Enter Name',
+                          border: OutlineInputBorder(),
                         ),
-                      ],
-                    ),
-                  ] else ...[
-                    Text(
-                      'Enter the OTP sent to your mobile number',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                    SizedBox(height: 20),
-                    OTPTextField(
-                      length: 6,
-                      otpFieldStyle: OtpFieldStyle(
-                          borderColor: Colors.white,
-                          focusBorderColor: Colors.green,
-                          enabledBorderColor: Colors.white),
-                      width: MediaQuery.of(context).size.width,
-                      fieldWidth: 40,
-                      style: TextStyle(
-                        fontSize: 18,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your name';
+                          }
+                          return null;
+                        },
                       ),
-                      textFieldAlignment: MainAxisAlignment.spaceAround,
-                      fieldStyle: FieldStyle.box,
-                      onCompleted: (code) {
-                        setState(() => otp = code);
-                      },
-                    ),
-                    SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _verifyOTP,
-                      style: ElevatedButton.styleFrom(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                        textStyle: TextStyle(fontSize: 18),
+                      SizedBox(height: 20),
+                      TextFormField(
+                        controller: phoneController,
+                        keyboardType: TextInputType.phone,
+                        maxLength: 10,
+                        decoration: InputDecoration(
+                          labelText: 'Enter Mobile Number',
+                          prefixText: '+91 ',
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your mobile number';
+                          } else if (!RegExp(r'^[6-9]\d{9}$').hasMatch(value)) {
+                            return 'Please enter a valid 10-digit mobile number';
+                          }
+                          return null;
+                        },
                       ),
-                      child: Text('Verify & Register'),
-                    ),
+                      SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: _sendOTP,
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 100, vertical: 15),
+                          textStyle: TextStyle(fontSize: 18),
+                        ),
+                        child: Text('Send OTP'),
+                      ),
+                      SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text("Already have an account?"),
+                          TextButton(
+                            onPressed: _navigateToLogin,
+                            child: Text(
+                              'Login',
+                              style: TextStyle(color: Colors.green),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      Text(
+                        'Enter the OTP sent to your mobile number',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      SizedBox(height: 20),
+                      OTPTextField(
+                        length: 6,
+                        otpFieldStyle: OtpFieldStyle(
+                            borderColor: Colors.white,
+                            focusBorderColor: Colors.green,
+                            enabledBorderColor: Colors.white),
+                        width: MediaQuery.of(context).size.width,
+                        fieldWidth: 40,
+                        style: TextStyle(
+                          fontSize: 18,
+                        ),
+                        textFieldAlignment: MainAxisAlignment.spaceAround,
+                        fieldStyle: FieldStyle.box,
+                        onCompleted: (code) {
+                          setState(() => otp = code);
+                        },
+                      ),
+                      SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: _verifyOTP,
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 50, vertical: 15),
+                          textStyle: TextStyle(fontSize: 18),
+                        ),
+                        child: Text('Verify & Register'),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
