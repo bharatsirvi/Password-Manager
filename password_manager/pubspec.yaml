@@ -92,6 +92,10 @@ flutter:
     - family: Tenada
       fonts:
         - asset: fonts/Tenada.ttf
+    - family: AspireNarrow
+      fonts:
+        - asset: fonts/AspireNarrowSCLight-Regular.ttf
+          weight: 300
 
     - family: Inter
       fonts:

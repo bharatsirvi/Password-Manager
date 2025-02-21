@@ -19,14 +19,27 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final AuthService _authService = AuthService();
   String generatedPassword = '';
+  int passwordLength = 12;
+  bool includeUppercase = true;
+  bool includeLowercase = true;
+  bool includeNumbers = true;
+  bool includeSymbols = true;
 
   String _generatePassword() {
-    const length = 12;
-    const chars =
-        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#\$%^&*()_+';
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const symbols = '!@#\$%^&*()_+';
+
+    String chars = '';
+    if (includeUppercase) chars += uppercase;
+    if (includeLowercase) chars += lowercase;
+    if (includeNumbers) chars += numbers;
+    if (includeSymbols) chars += symbols;
+
     Random random = Random.secure();
-    return List.generate(length, (index) => chars[random.nextInt(chars.length)])
-        .join();
+    return List.generate(
+        passwordLength, (index) => chars[random.nextInt(chars.length)]).join();
   }
 
   void _savePassword() async {
@@ -120,12 +133,24 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    SizedBox(height: 40),
+                    SizedBox(height: 50),
                     Image.asset(
-                      'assets/images/gpass.png',
-                      height: 250,
-                      width: 250,
+                      'assets/images/generatePassword.png',
+                      width: 300,
                     ),
+                    SizedBox(height: 10),
+                    Text(
+                      'HAM YAAD RAKHENGE',
+                      style: TextStyle(
+                        fontFamily: 'AspireNarrow',
+                        fontSize: 12,
+                        wordSpacing: 4,
+                        letterSpacing: 6,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.yellow[700],
+                      ),
+                    ),
+                    SizedBox(height: 40),
                     Card(
                       elevation: 10,
                       shape: RoundedRectangleBorder(
@@ -219,6 +244,62 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                               },
                             ),
                             SizedBox(height: 20),
+                            Text(
+                              'Password Length: $passwordLength',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            Slider(
+                              value: passwordLength.toDouble(),
+                              min: 8,
+                              max: 20,
+
+                              label: passwordLength.toString(),
+                              activeColor: const Color.fromARGB(
+                                  255, 255, 255, 255), // Set the active color
+                              inactiveColor: Colors.grey,
+                              onChanged: (double value) {
+                                setState(() {
+                                  passwordLength = value.toInt();
+                                });
+                              },
+                            ),
+                            CheckboxListTile(
+                              title: Text('Include Uppercase Letters'),
+                              value: includeUppercase,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  includeUppercase = value!;
+                                });
+                              },
+                            ),
+                            CheckboxListTile(
+                              title: Text('Include Lowercase Letters'),
+                              value: includeLowercase,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  includeLowercase = value!;
+                                });
+                              },
+                            ),
+                            CheckboxListTile(
+                              title: Text('Include Numbers'),
+                              value: includeNumbers,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  includeNumbers = value!;
+                                });
+                              },
+                            ),
+                            CheckboxListTile(
+                              title: Text('Include Symbols'),
+                              value: includeSymbols,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  includeSymbols = value!;
+                                });
+                              },
+                            ),
+                            SizedBox(height: 20),
                             ElevatedButton.icon(
                               onPressed: () {
                                 if (_formKey.currentState!.validate()) {
@@ -270,12 +351,15 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text(
-                                    generatedPassword,
-                                    style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white),
+                                  Flexible(
+                                    child: Text(
+                                      generatedPassword,
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                   IconButton(
                                     icon: Icon(Icons.copy, color: Colors.white),
@@ -287,7 +371,7 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                           ),
                         ),
                       ),
-                    SizedBox(height: 80),
+                    SizedBox(height: 20),
                     Align(
                       alignment: Alignment.bottomCenter,
                       child: generatedPassword.isNotEmpty

@@ -139,11 +139,27 @@ class _ViewPasswordsScreenState extends State<ViewPasswordsScreen> {
               child: Column(
                 children: [
                   SizedBox(height: 50),
+                  // Image.asset(
+                  //   'assets/images/view.png', // Update with your image path
+                  //   width: 280,
+                  // ),
+                  // Text(
+                  //   'HAME YAAD HAI',
+                  //   style: TextStyle(
+                  //     fontFamily: 'AspireNarrow',
+                  //     fontSize: 12,
+                  //     wordSpacing: 8,
+                  //     letterSpacing: 6,
+                  //     fontWeight: FontWeight.bold,
+                  //     color: Colors.yellow[700],
+                  //   ),
+                  // ),
                   Image.asset(
-                    'assets/images/pass.png', // Update with your image path
-                    width: 250,
+                    'assets/images/viewPassword.png', // Update with your image path
+                    width: 180,
                   ),
-                  SizedBox(height: 20),
+
+                  SizedBox(height: 40),
                   TextField(
                     controller: searchController,
                     decoration: InputDecoration(
@@ -153,7 +169,7 @@ class _ViewPasswordsScreenState extends State<ViewPasswordsScreen> {
                     ),
                     onChanged: _filterPasswords,
                   ),
-                  SizedBox(height: 20),
+                  SizedBox(height: 10),
                   Expanded(
                     child: isLoading
                         ? Center(

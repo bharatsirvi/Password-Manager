@@ -412,7 +412,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onPressed: () {
                           String suggestion = suggestionController.text;
                           if (suggestion.isNotEmpty) {
-                            _sendEmail(suggestion);
+                            // _sendEmail(suggestion);
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content:
+                                      Text('Thank you for your suggestion!')),
+                            );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
