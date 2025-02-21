@@ -8,6 +8,8 @@ buildscript {
         classpath 'com.google.gms:google-services:4.4.0' 
         // Android Gradle Plugin version (make sure this matches your Flutter version compatibility)
         classpath 'com.android.tools.build:gradle:8.2.1'
+        
+          
     }
 }
 
