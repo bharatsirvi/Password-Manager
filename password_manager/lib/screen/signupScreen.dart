@@ -113,6 +113,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          // Gradient background color
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color.fromARGB(255, 59, 84, 105),
+                  const Color.fromARGB(255, 2, 36, 76)
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
           SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -124,7 +137,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: [
                     SizedBox(height: 50),
                     Image.asset(
-                      'assets/images/logobig.png',
+                      'assets/images/vaultix.png',
                       height: 200,
                     ),
                     SizedBox(height: 20),

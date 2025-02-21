@@ -27,8 +27,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
             user.uid,
             _setPinController.text,
           );
-          CustomSnackBar.show(
-              context, 'PIN set successfully!', Color(0xFF00FF7F));
+
           // Navigate to Home or Dashboard
           Navigator.pushNamed(context, AppRoutes.navigation);
         } else {
@@ -66,6 +65,19 @@ class _SetPinScreenState extends State<SetPinScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          // Gradient background color
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color.fromARGB(255, 59, 84, 105),
+                  const Color.fromARGB(255, 2, 36, 76)
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
           SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -75,7 +87,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
                 children: [
                   SizedBox(height: 50),
                   Image.asset(
-                    'assets/images/logobig.png',
+                    'assets/images/vaultix.png',
                     height: 200,
                   ),
                   SizedBox(height: 50),
@@ -84,6 +96,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                   SizedBox(height: 50),

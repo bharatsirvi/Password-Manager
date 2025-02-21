@@ -249,6 +249,8 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                               style: TextStyle(fontSize: 16),
                             ),
                             Slider(
+                              // autofocus: true,
+
                               value: passwordLength.toDouble(),
                               min: 8,
                               max: 20,
@@ -264,7 +266,7 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                               },
                             ),
                             CheckboxListTile(
-                              title: Text('Include Uppercase Letters'),
+                              title: Text('Include Uppercase'),
                               value: includeUppercase,
                               onChanged: (bool? value) {
                                 setState(() {
@@ -273,7 +275,7 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                               },
                             ),
                             CheckboxListTile(
-                              title: Text('Include Lowercase Letters'),
+                              title: Text('Include Lowercase'),
                               value: includeLowercase,
                               onChanged: (bool? value) {
                                 setState(() {

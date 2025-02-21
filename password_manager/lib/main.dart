@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:password_manager/routes.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:password_manager/screen/splashScreen.dart';
 import 'package:password_manager/utills/authWrapper.dart';
 
 void main() async {
@@ -95,7 +96,7 @@ class MyApp extends StatelessWidget {
           hintStyle: TextStyle(color: Colors.white54),
         ),
       ),
-      home: AuthWrapper(),
+      home: SplashScreen(),
       onGenerateRoute: generateRoute,
     );
   }

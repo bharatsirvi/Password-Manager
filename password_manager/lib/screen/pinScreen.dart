@@ -75,6 +75,19 @@ class _PinScreenState extends State<PinScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          // Gradient background color
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color.fromARGB(255, 59, 84, 105),
+                  const Color.fromARGB(255, 2, 36, 76)
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
           SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -84,7 +97,7 @@ class _PinScreenState extends State<PinScreen> {
                 children: [
                   SizedBox(height: 50),
                   Image.asset(
-                    'assets/images/logobig.png',
+                    'assets/images/vaultix.png',
                     height: 200,
                   ),
                   SizedBox(height: 50),
@@ -93,6 +106,7 @@ class _PinScreenState extends State<PinScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                   SizedBox(height: 20),
@@ -144,7 +158,8 @@ class _PinScreenState extends State<PinScreen> {
         textAlign: TextAlign.center,
         maxLength: 1,
         obscureText: true,
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        style: TextStyle(
+            fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
         decoration: InputDecoration(
           counterText: "",
           border: OutlineInputBorder(

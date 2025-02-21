@@ -79,16 +79,13 @@ class _BottomNavigationState extends State<BottomNavigation> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Image.asset(
-                    'assets/images/sym2.png', // Replace with your logo asset path
-                    height: 30,
+                    'assets/images/vaultixLogo.png', // Replace with your logo asset path
+                    height: 40,
                   ),
-                  SizedBox(width: 10),
-                  Text(
-                    _appBarTitle,
-                    style: TextStyle(
-                      fontFamily: 'Tenada',
-                      fontSize: 24,
-                    ),
+                  SizedBox(width: 5),
+                  Image.asset(
+                    'assets/images/vname4.png', // Replace with your logo asset path
+                    height: 25,
                   ),
                 ],
               ),

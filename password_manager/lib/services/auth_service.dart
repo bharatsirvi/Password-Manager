@@ -38,7 +38,7 @@ class AuthService {
       return VerificationResult.success; // Credentials are correct
     } catch (e) {
       print("Error verifying phone and password: $e");
-      return VerificationResult.error; // Error occurred
+      return VerificationResult.error; // Errorcd occurred
     }
   }
 
