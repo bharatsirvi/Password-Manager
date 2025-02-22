@@ -1,33 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:otp_text_field/otp_text_field.dart';
-import 'package:otp_text_field/style.dart';
-import 'package:password_manager/routes.dart';
-import 'package:password_manager/screen/loginScreen.dart';
-import 'package:password_manager/utills/customTextField.dart';
-import 'package:password_manager/utills/snakebar.dart';
+import 'package:password_manager/screen/resetpasswordScreen.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:password_manager/utills/snakebar.dart';
 import '../services/auth_service.dart';
-import '../services/user_service.dart';
 
-class RegisterScreen extends StatefulWidget {
+class ForgotPasswordScreen extends StatefulWidget {
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController phoneController = TextEditingController();
-  final TextEditingController nameController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  String verificationId = '';
   bool isOTPSent = false;
   bool isLoading = false;
   String otp = '';
+  String verificationId = '';
 
   final AuthService _authService = AuthService();
-  final UserService _userService = UserService();
 
-  // Send OTP
   void _sendOTP() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -35,20 +26,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => isLoading = true);
 
-    print(
-        "phone...............................: ${phoneController.text.trim()}");
-    bool phoneExists = await _userService
-        .doesPhoneNumberExist("+91${phoneController.text.trim()}");
-
-    if (phoneExists) {
-      CustomSnackBar.show(
-          context, 'Phone number already exists. Please login.', Colors.red);
-      setState(() => isLoading = false);
-      return;
-    }
+    String phone = "+91${phoneController.text.trim()}";
 
     _authService.sendOTP(
-      phoneNumber: '+91${phoneController.text.trim()}',
+      phoneNumber: phone,
       onCodeSent: (verId) {
         setState(() {
           verificationId = verId;
@@ -63,7 +44,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // Verify OTP and Register
   void _verifyOTP() async {
     setState(() => isLoading = true);
     var credential = await _authService.verifyOTP(
@@ -71,42 +51,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
       otp: otp,
     );
 
-    if (credential != null && credential.user != null) {
-      await _userService.saveUserData(
-        credential.user!.uid,
-        "+91${phoneController.text.trim()}",
-        nameController.text.trim(),
-        '', // Assuming you don't have a password at this stage
-      );
+    if (credential?.user != null) {
+      // **OTP Verified, Navigate to Reset Password Screen**
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              ResetPasswordScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(1.0, 0.0);
+            const end = Offset.zero;
+            const curve = Curves.ease;
 
-      Navigator.pushReplacementNamed(context, AppRoutes.setPin);
+            var tween =
+                Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+
+            return SlideTransition(
+              position: animation.drive(tween),
+              child: child,
+            );
+          },
+        ),
+      );
     } else {
       CustomSnackBar.show(context, 'Invalid OTP', Colors.red);
     }
 
     setState(() => isLoading = false);
-  }
-
-  void _navigateToLogin() {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => LoginScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.ease;
-
-          var tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      ),
-    );
   }
 
   @override
@@ -142,35 +113,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       height: 200,
                     ),
                     SizedBox(height: 20),
-                    SizedBox(height: 50),
-                    if (!isOTPSent) ...[
-                      CustomTextField(
-                        controller: nameController,
-                        labelText: 'Enter Name',
-                        keyboardType: TextInputType.name,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                              RegExp(r'[a-zA-Z ]')),
-                        ],
-                        prefixIcon: Icons.person,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your name';
-                          }
-                          return null;
-                        },
+                    Text(
+                      'Forgot Password',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
-                      SizedBox(height: 20),
-                      CustomTextField(
+                    ),
+                    SizedBox(height: 20),
+                    if (!isOTPSent) ...[
+                      TextFormField(
                         controller: phoneController,
-                        labelText: 'Enter Mobile Number',
                         keyboardType: TextInputType.phone,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        maxLength: 10,
-                        prefixIcon: Icons.phone,
-                        counterText: '',
+                        decoration: InputDecoration(
+                          labelText: 'Enter Mobile Number',
+                          prefixText: '+91 ',
+                          border: OutlineInputBorder(),
+                        ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your mobile number';
@@ -182,30 +142,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       SizedBox(height: 20),
                       ElevatedButton(
-                        onPressed: () {
-                          FocusScope.of(context).unfocus(); //
-                          _sendOTP();
-                        },
+                        onPressed: _sendOTP,
                         style: ElevatedButton.styleFrom(
                           padding: EdgeInsets.symmetric(
                               horizontal: 100, vertical: 15),
                           textStyle: TextStyle(fontSize: 18),
                         ),
                         child: Text('Send OTP'),
-                      ),
-                      SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text("Already have an account?"),
-                          TextButton(
-                            onPressed: _navigateToLogin,
-                            child: Text(
-                              'Login',
-                              style: TextStyle(color: Colors.green),
-                            ),
-                          ),
-                        ],
                       ),
                     ] else ...[
                       Text(
@@ -222,7 +165,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           animationType: AnimationType.fade,
                           onCompleted: (code) {
                             setState(() => otp = code);
-                            FocusScope.of(context).unfocus(); //
                             _verifyOTP();
                           },
                           enablePinAutofill: true,
@@ -260,15 +202,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       SizedBox(height: 20),
-                      // ElevatedButton(
-                      //   onPressed: _verifyOTP,
-                      //   style: ElevatedButton.styleFrom(
-                      //     padding: EdgeInsets.symmetric(
-                      //         horizontal: 50, vertical: 15),
-                      //     textStyle: TextStyle(fontSize: 18),
-                      //   ),
-                      //   child: Text('Verify & Register'),
-                      // ),
+                      ElevatedButton(
+                        onPressed: _verifyOTP,
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 50, vertical: 15),
+                          textStyle: TextStyle(fontSize: 18),
+                        ),
+                        child: Text('Verify OTP'),
+                      ),
                     ],
                   ],
                 ),

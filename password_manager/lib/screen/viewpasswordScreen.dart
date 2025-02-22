@@ -1,8 +1,10 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:password_manager/services/auth_service.dart';
 import 'package:flutter/services.dart';
+import 'package:password_manager/utills/customTextField.dart';
+import 'package:password_manager/utills/sound.dart';
 
 class ViewPasswordsScreen extends StatefulWidget {
   @override
@@ -18,6 +20,10 @@ class _ViewPasswordsScreenState extends State<ViewPasswordsScreen> {
   List<DocumentSnapshot> filteredPasswords = [];
   Map<String, bool> passwordVisibility = {};
   bool isLoading = true;
+
+  // Key for the AnimatedList
+  final GlobalKey<AnimatedListState> _animatedListKey =
+      GlobalKey<AnimatedListState>();
 
   @override
   void initState() {
@@ -63,41 +69,175 @@ class _ViewPasswordsScreenState extends State<ViewPasswordsScreen> {
     Clipboard.setData(ClipboardData(text: text));
   }
 
-  void _deletePassword(String docId) async {
+  void _deletePassword(String docId, int index) async {
     User? user = _auth.currentUser;
     if (user != null) {
+      await SoundUtil.playSound('sounds/delete.mp3');
+      // Remove the item from the list with animation
+      final removedItem = filteredPasswords.removeAt(index);
+      _animatedListKey.currentState!.removeItem(
+        index,
+        (context, animation) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0), // Slide from right to left
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOut,
+            )),
+            child: Card(
+              elevation: 10,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color.fromARGB(255, 1, 11, 23),
+                      const Color.fromARGB(255, 16, 131, 224)
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.all(16.0),
+                child: ListTile(
+                  title: Text(
+                    removedItem['platform'],
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  subtitle: Text(
+                    passwordVisibility[removedItem.id] ?? false
+                        ? removedItem['password']
+                        : '•' * removedItem['password'].length,
+                    style: TextStyle(
+                      color: Colors.white70,
+                    ),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          passwordVisibility[removedItem.id] ?? false
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.white70,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            passwordVisibility[removedItem.id] =
+                                !(passwordVisibility[removedItem.id] ?? false);
+                          });
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.copy,
+                          color: Colors.white70,
+                        ),
+                        onPressed: () =>
+                            _copyToClipboard(removedItem['password']),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      );
+
+      // Delete the item from Firestore
       await _firestore
           .collection('users')
           .doc(user.uid)
           .collection('passwords')
           .doc(docId)
           .delete();
-      _fetchPasswords();
     }
   }
 
-  void _showDeleteConfirmationDialog(String docId) {
+  void _showDeleteConfirmationDialog(String docId, int index) async {
+    await SoundUtil.playSound('sounds/alert.mp3');
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Delete Password'),
-          content: Text('Are you sure you want to delete this password?'),
-          actions: [
-            TextButton(
-              child: Text('Cancel', style: TextStyle(color: Colors.green)),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: Colors.transparent,
+          contentPadding: EdgeInsets.zero,
+          content: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color.fromARGB(255, 59, 84, 105),
+                  const Color.fromARGB(255, 2, 36, 76)
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.circular(20),
             ),
-            TextButton(
-              child: Text('Delete', style: TextStyle(color: Colors.red)),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _deletePassword(docId);
-              },
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Delete Password',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Icon(Icons.delete, color: Colors.white),
+                  ],
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'Are you sure you want to delete this password?',
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      child:
+                          Text('Cancel', style: TextStyle(color: Colors.green)),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red[900],
+                      ),
+                      child:
+                          Text('Delete', style: TextStyle(color: Colors.white)),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _deletePassword(docId, index);
+                      },
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
@@ -124,12 +264,17 @@ class _ViewPasswordsScreenState extends State<ViewPasswordsScreen> {
           Positioned(
             top: 40,
             left: 12,
-            child: BackButton(
+            child: IconButton(
+              icon: Icon(Icons.arrow_back),
               color: Colors.white,
+              iconSize: 30,
               onPressed: () {
-                print('Back Button Pressed');
+                print("Back button pressed");
                 Navigator.of(context).pop();
               },
+              tooltip: 'Back',
+              splashColor: Colors.grey,
+              highlightColor: Colors.black,
             ),
           ),
           // Content
@@ -139,34 +284,15 @@ class _ViewPasswordsScreenState extends State<ViewPasswordsScreen> {
               child: Column(
                 children: [
                   SizedBox(height: 50),
-                  // Image.asset(
-                  //   'assets/images/view.png', // Update with your image path
-                  //   width: 280,
-                  // ),
-                  // Text(
-                  //   'HAME YAAD HAI',
-                  //   style: TextStyle(
-                  //     fontFamily: 'AspireNarrow',
-                  //     fontSize: 12,
-                  //     wordSpacing: 8,
-                  //     letterSpacing: 6,
-                  //     fontWeight: FontWeight.bold,
-                  //     color: Colors.yellow[700],
-                  //   ),
-                  // ),
                   Image.asset(
                     'assets/images/viewPassword.png', // Update with your image path
                     width: 180,
                   ),
-
-                  SizedBox(height: 40),
-                  TextField(
+                  SizedBox(height: 20),
+                  CustomTextField(
                     controller: searchController,
-                    decoration: InputDecoration(
-                      labelText: 'Search by Platform',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.search),
-                    ),
+                    labelText: 'Search by Website/App',
+                    prefixIcon: Icons.search,
                     onChanged: _filterPasswords,
                   ),
                   SizedBox(height: 10),
@@ -177,6 +303,7 @@ class _ViewPasswordsScreenState extends State<ViewPasswordsScreen> {
                           )
                         : filteredPasswords.isEmpty
                             ? Card(
+                                color: const Color.fromARGB(62, 6, 119, 211),
                                 elevation: 10,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
@@ -190,17 +317,17 @@ class _ViewPasswordsScreenState extends State<ViewPasswordsScreen> {
                                           MainAxisAlignment.center,
                                       children: [
                                         Icon(
-                                          Icons.add,
+                                          Icons.password,
                                           size: 50,
-                                          color: Colors.blueGrey.shade900,
+                                          color: Colors.white30,
                                         ),
                                         SizedBox(height: 10),
                                         Text(
-                                          'Please Add Passwords',
+                                          'No Passwords Found',
                                           style: TextStyle(
                                             fontSize: 20,
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.blueGrey.shade900,
+                                            color: Colors.white30,
                                           ),
                                         ),
                                       ],
@@ -208,84 +335,97 @@ class _ViewPasswordsScreenState extends State<ViewPasswordsScreen> {
                                   ),
                                 ),
                               )
-                            : ListView.builder(
-                                itemCount: filteredPasswords.length,
-                                itemBuilder: (context, index) {
+                            : AnimatedList(
+                                key: _animatedListKey,
+                                initialItemCount: filteredPasswords.length,
+                                itemBuilder: (context, index, animation) {
                                   DocumentSnapshot doc =
                                       filteredPasswords[index];
                                   bool isVisible =
                                       passwordVisibility[doc.id] ?? false;
-                                  return Card(
-                                    elevation: 10,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            const Color.fromARGB(
-                                                255, 1, 11, 23),
-                                            const Color.fromARGB(
-                                                255, 16, 131, 224)
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
+                                  return SlideTransition(
+                                    position: Tween<Offset>(
+                                      begin: const Offset(
+                                          1, 0), // Slide from right to left
+                                      end: Offset.zero,
+                                    ).animate(CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.easeInOut,
+                                    )),
+                                    child: Card(
+                                      elevation: 10,
+                                      shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(20),
                                       ),
-                                      padding: const EdgeInsets.all(16.0),
-                                      child: ListTile(
-                                        title: Text(
-                                          doc['platform'],
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              const Color.fromARGB(
+                                                  255, 1, 11, 23),
+                                              const Color.fromARGB(
+                                                  255, 16, 131, 224)
+                                            ],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
                                           ),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
                                         ),
-                                        subtitle: Text(
-                                          isVisible
-                                              ? doc['password']
-                                              : '•' * doc['password'].length,
-                                          style: TextStyle(
-                                            color: Colors.white70,
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: ListTile(
+                                          title: Text(
+                                            doc['platform'],
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
                                           ),
-                                        ),
-                                        trailing: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            IconButton(
-                                              icon: Icon(
-                                                isVisible
-                                                    ? Icons.visibility
-                                                    : Icons.visibility_off,
-                                                color: Colors.white70,
-                                              ),
-                                              onPressed: () {
-                                                setState(() {
-                                                  passwordVisibility[doc.id] =
-                                                      !isVisible;
-                                                });
-                                              },
+                                          subtitle: Text(
+                                            isVisible
+                                                ? doc['password']
+                                                : '•' * doc['password'].length,
+                                            style: TextStyle(
+                                              color: Colors.white70,
                                             ),
-                                            IconButton(
-                                              icon: Icon(
-                                                Icons.copy,
-                                                color: Colors.white70,
+                                          ),
+                                          trailing: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              IconButton(
+                                                icon: Icon(
+                                                  isVisible
+                                                      ? Icons.visibility
+                                                      : Icons.visibility_off,
+                                                  color: Colors.white70,
+                                                ),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    passwordVisibility[doc.id] =
+                                                        !isVisible;
+                                                  });
+                                                },
                                               ),
-                                              onPressed: () => _copyToClipboard(
-                                                  doc['password']),
-                                            ),
-                                            IconButton(
-                                              icon: Icon(
-                                                Icons.delete,
-                                                color: Colors.white,
+                                              IconButton(
+                                                icon: Icon(
+                                                  Icons.copy,
+                                                  color: Colors.white70,
+                                                ),
+                                                onPressed: () =>
+                                                    _copyToClipboard(
+                                                        doc['password']),
                                               ),
-                                              onPressed: () =>
-                                                  _showDeleteConfirmationDialog(
-                                                      doc.id),
-                                            ),
-                                          ],
+                                              IconButton(
+                                                icon: Icon(
+                                                  Icons.delete,
+                                                  color: Colors.white,
+                                                ),
+                                                onPressed: () =>
+                                                    _showDeleteConfirmationDialog(
+                                                        doc.id, index),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),

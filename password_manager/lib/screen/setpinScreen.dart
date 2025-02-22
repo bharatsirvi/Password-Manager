@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:password_manager/routes.dart';
+import 'package:password_manager/screen/navigationScreen.dart';
 import 'package:password_manager/services/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:password_manager/utills/customTextField.dart';
 import 'package:password_manager/utills/snakebar.dart';
 
 class SetPinScreen extends StatefulWidget {
@@ -18,6 +20,9 @@ class _SetPinScreenState extends State<SetPinScreen> {
   final UserService _userService = UserService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  bool _isNewPinVisible = false;
+  bool _isConfirmPinVisible = false;
+
   void _submitPin() async {
     if (_formKey.currentState!.validate()) {
       if (_setPinController.text == _confirmPinController.text) {
@@ -28,8 +33,11 @@ class _SetPinScreenState extends State<SetPinScreen> {
             _setPinController.text,
           );
 
-          // Navigate to Home or Dashboard
-          Navigator.pushNamed(context, AppRoutes.navigation);
+          // Navigate to Home or Dashboard with animation
+          Navigator.push(
+            context,
+            _createFadeSlideTransitionRoute(BottomNavigation()),
+          );
         } else {
           CustomSnackBar.show(context, 'User not logged in.', Colors.red);
         }
@@ -47,7 +55,10 @@ class _SetPinScreenState extends State<SetPinScreen> {
         await _userService.deleteUserData(user.uid);
         await user.delete();
 
-        Navigator.pushReplacementNamed(context, AppRoutes.login);
+        Navigator.push(
+          context,
+          _createFadeSlideTransitionRoute(BottomNavigation()),
+        );
       } catch (e) {
         CustomSnackBar.show(context, 'Please try again.', Colors.red);
       }
@@ -96,23 +107,36 @@ class _SetPinScreenState extends State<SetPinScreen> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
+                      fontFamily: 'EzraSemiBold',
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 50),
+                  SizedBox(height: 20),
                   Form(
                     key: _formKey,
                     child: Column(
                       children: [
-                        TextFormField(
+                        CustomTextField(
                           controller: _setPinController,
+                          labelText: 'New PIN',
                           keyboardType: TextInputType.number,
-                          obscureText: true,
-                          maxLength: 4,
-                          decoration: const InputDecoration(
-                            labelText: 'Set PIN',
-                            border: OutlineInputBorder(),
+                          obscureText: !_isNewPinVisible,
+                          prefixIcon: Icons.lock_open,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isNewPinVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isNewPinVisible = !_isNewPinVisible;
+                              });
+                            },
                           ),
+                          maxLength: 4,
+                          counterText: '',
                           validator: (value) {
                             if (value == null || value.length != 4) {
                               return 'Enter a 4-digit PIN';
@@ -120,32 +144,52 @@ class _SetPinScreenState extends State<SetPinScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 20),
-                        TextFormField(
+                        SizedBox(height: 20),
+                        CustomTextField(
                           controller: _confirmPinController,
+                          labelText: 'Confirm PIN',
                           keyboardType: TextInputType.number,
-                          obscureText: true,
+                          obscureText: !_isConfirmPinVisible,
                           maxLength: 4,
-                          decoration: const InputDecoration(
-                            labelText: 'Confirm PIN',
-                            border: OutlineInputBorder(),
+                          prefixIcon: Icons.lock_outline,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isConfirmPinVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isConfirmPinVisible = !_isConfirmPinVisible;
+                              });
+                            },
                           ),
+                          counterText: '',
                           validator: (value) {
                             if (value == null || value.length != 4) {
                               return 'Enter a 4-digit PIN';
+                            } else if (value != _setPinController.text) {
+                              return 'PINs do not match';
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 30),
                         ElevatedButton(
-                          onPressed: _submitPin,
+                          onPressed: () {
+                            FocusScope.of(context)
+                                .unfocus(); // Dismiss the keyboard
+                            _submitPin();
+                          },
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 100, vertical: 15),
                             textStyle: TextStyle(fontSize: 18),
                           ),
-                          child: const Text('Submit'),
+                          child: const Text(
+                            'Set PIN',
+                          ),
                         ),
                       ],
                     ),
@@ -158,4 +202,31 @@ class _SetPinScreenState extends State<SetPinScreen> {
       ),
     );
   }
+}
+
+// Function to create a fade and slide transition route
+Route _createFadeSlideTransitionRoute(Widget page) {
+  return PageRouteBuilder(
+    pageBuilder: (context, animation, secondaryAnimation) => page,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      const begin = Offset(1.0, 0.0); // Slide from right to left
+      const end = Offset.zero;
+      const curve = Curves.easeInOut;
+
+      var slideTween =
+          Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+      var slideAnimation = animation.drive(slideTween);
+
+      var fadeTween = Tween(begin: 0.0, end: 1.0);
+      var fadeAnimation = animation.drive(fadeTween);
+
+      return FadeTransition(
+        opacity: fadeAnimation,
+        child: SlideTransition(
+          position: slideAnimation,
+          child: child,
+        ),
+      );
+    },
+  );
 }

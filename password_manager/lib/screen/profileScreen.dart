@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:password_manager/routes.dart';
+import 'package:password_manager/utills/customTextField.dart';
+import 'package:password_manager/utills/snakebar.dart';
+import 'package:password_manager/utills/sound.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -12,6 +15,13 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController currentPinController = TextEditingController();
+  final TextEditingController newPinController = TextEditingController();
+  final TextEditingController confirmPinController = TextEditingController();
+  bool _isCurrentPinVisible = false;
+  bool _isNewPinVisible = false;
+  bool _isConfirmPinVisible = false;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   User? user;
@@ -49,28 +59,111 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 
-  void _showLogoutConfirmationDialog() {
+  // void _showLogoutConfirmationDialog() {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: Text('Logout'),
+  //         content: Text('Are you sure you want to logout?'),
+  //         actions: [
+  //           TextButton(
+  //             child: Text('Cancel', style: TextStyle(color: Colors.green)),
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //             },
+  //           ),
+  //           TextButton(
+  //             child: Text('Logout', style: TextStyle(color: Colors.red)),
+  //             onPressed: () {
+  //               Navigator.of(context).pop();
+  //               _logout();
+  //             },
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
+
+  void _showLogoutConfirmationDialog() async {
+    await SoundUtil.playSound('sounds/alert.mp3');
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Logout'),
-          content: Text('Are you sure you want to logout?'),
-          actions: [
-            TextButton(
-              child: Text('Cancel', style: TextStyle(color: Colors.green)),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Logout', style: TextStyle(color: Colors.red)),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _logout();
-              },
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.9, // Full width
+                padding: EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color.fromARGB(255, 59, 84, 105),
+                      const Color.fromARGB(255, 2, 36, 76)
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Logout',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Icon(Icons.logout, color: Colors.white),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      'Are you sure you want to logout?',
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                    SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          child: Text('Cancel',
+                              style: TextStyle(color: Colors.green)),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red[900],
+                          ),
+                          child: Text('Logout',
+                              style: TextStyle(color: Colors.white)),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            _logout();
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -146,118 +239,212 @@ class _ProfileScreenState extends State<ProfileScreen> {
   //     },
   //   );
   // }
+
+  void _resetDialogState() {
+    setState(() {
+      _isCurrentPinVisible = false;
+      _isNewPinVisible = false;
+      _isConfirmPinVisible = false;
+      currentPinController.clear();
+      newPinController.clear();
+      confirmPinController.clear();
+    });
+  }
+
   void _changePassword() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        final TextEditingController currentPinController =
-            TextEditingController();
-        final TextEditingController newPinController = TextEditingController();
-        final TextEditingController confirmPinController =
-            TextEditingController();
-
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.9, // Full width
-            padding: EdgeInsets.all(16.0),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Change Password',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 24,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(width: 10),
-                      Icon(
-                        Icons.change_circle,
-                        color: Colors.white,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  TextField(
-                    controller: currentPinController,
-                    decoration: InputDecoration(
-                      labelText: 'Current PIN',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock_outline),
-                    ),
-                    obscureText: true,
-                    keyboardType: TextInputType.number,
-                  ),
-                  SizedBox(height: 20),
-                  TextField(
-                    controller: newPinController,
-                    decoration: InputDecoration(
-                      labelText: 'New PIN',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock_open),
-                    ),
-                    obscureText: true,
-                    keyboardType: TextInputType.number,
-                  ),
-                  SizedBox(height: 20),
-                  TextField(
-                    controller: confirmPinController,
-                    decoration: InputDecoration(
-                      labelText: 'Confirm PIN',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock),
-                    ),
-                    obscureText: true,
-                    keyboardType: TextInputType.number,
-                  ),
-                  SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        child:
-                            Text('Cancel', style: TextStyle(color: Colors.red)),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                      TextButton(
-                        child: Text('Change',
-                            style: TextStyle(color: Colors.green)),
-                        onPressed: () {
-                          String currentPin = currentPinController.text;
-                          String newPin = newPinController.text;
-                          String confirmPin = confirmPinController.text;
-
-                          if (newPin == confirmPin) {
-                            // Update the PIN in the database
-                            _updatePin(currentPin, newPin);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text(
-                                      'New PIN and Confirm PIN do not match')),
-                            );
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ],
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
               ),
-            ),
-          ),
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.9, // Full width
+                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color.fromARGB(255, 59, 84, 105),
+                      const Color.fromARGB(255, 2, 36, 76)
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: SingleChildScrollView(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Change Password',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            Icon(
+                              Icons.change_circle,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 20),
+                        CustomTextField(
+                          controller: currentPinController,
+                          labelText: 'Current PIN',
+                          prefixIcon: Icons.lock_outline,
+                          obscureText: !_isCurrentPinVisible,
+                          keyboardType: TextInputType.number,
+                          maxLength: 4,
+                          counterText: '',
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isCurrentPinVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isCurrentPinVisible = !_isCurrentPinVisible;
+                              });
+                            },
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your current PIN';
+                            } else if (value.length != 4) {
+                              return 'Enter a 4-digit PIN';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 20),
+                        CustomTextField(
+                          controller: newPinController,
+                          labelText: 'New PIN',
+                          prefixIcon: Icons.lock_open,
+                          obscureText: !_isNewPinVisible,
+                          keyboardType: TextInputType.number,
+                          maxLength: 4,
+                          counterText: '',
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isNewPinVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isNewPinVisible = !_isNewPinVisible;
+                              });
+                            },
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your new PIN';
+                            } else if (value.length != 4) {
+                              return 'Enter a 4-digit PIN';
+                            } else if (value == currentPinController.text) {
+                              return 'Same as the current PIN';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 20),
+                        CustomTextField(
+                          controller: confirmPinController,
+                          labelText: 'Confirm PIN',
+                          prefixIcon: Icons.lock,
+                          obscureText: !_isConfirmPinVisible,
+                          keyboardType: TextInputType.number,
+                          maxLength: 4,
+                          counterText: '',
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isConfirmPinVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isConfirmPinVisible = !_isConfirmPinVisible;
+                              });
+                            },
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please confirm your new PIN';
+                            } else if (value.length != 4) {
+                              return 'Enter a 4-digit PIN';
+                            } else if (value != newPinController.text) {
+                              return 'PINs do not match';
+                            }
+                            return null;
+                          },
+                        ),
+                        SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              child: Text('Cancel',
+                                  style: TextStyle(color: Colors.red)),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                _resetDialogState();
+                              },
+                            ),
+                            TextButton(
+                              child: Text('Change',
+                                  style: TextStyle(color: Colors.green)),
+                              onPressed: () {
+                                if (_formKey.currentState!.validate()) {
+                                  FocusScope.of(context).unfocus();
+                                  String currentPin = currentPinController.text;
+                                  String newPin = newPinController.text;
+                                  String confirmPin = confirmPinController.text;
+
+                                  if (newPin == confirmPin) {
+                                    // Update the PIN in the database
+                                    _updatePin(currentPin, newPin);
+                                  } else {
+                                    CustomSnackBar.show(
+                                      context,
+                                      'New PIN and Confirm PIN do not match',
+                                      Colors.red,
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
         );
       },
-    );
+    ).then((_) {
+      _resetDialogState();
+    });
   }
 
   void _updatePin(String currentPin, String newPin) async {
@@ -272,18 +459,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             .doc(user!.uid)
             .update({'password': newPin});
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('PIN updated successfully')),
-        );
+        CustomSnackBar.show(context, 'PIN updated successfully', Colors.yellow,
+            textColor: Colors.black);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Current PIN is incorrect')),
-        );
+        CustomSnackBar.show(
+            context, 'Incorrect PIN. Please try again.', Colors.red);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update PIN')),
-      );
+      CustomSnackBar.show(
+          context, 'An error occurred. Please try again.', Colors.red);
     }
   }
 
@@ -294,156 +478,196 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final TextEditingController suggestionController =
             TextEditingController();
 
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.9, // Full width
-            padding: EdgeInsets.all(16.0),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.9, // Full width
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color.fromARGB(255, 59, 84, 105),
+                      const Color.fromARGB(255, 2, 36, 76)
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Help & Support',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Icon(Icons.help, color: Colors.white),
+                        ],
+                      ),
+                      SizedBox(height: 20),
                       Text(
-                        'Help & Support',
+                        '- About This App:',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 24,
-                          color: Colors.blueAccent,
+                          fontSize: 16,
+                          color: Colors.green,
                         ),
                       ),
-                      SizedBox(width: 10),
-                      Icon(Icons.help, color: Colors.blueAccent),
+                      SizedBox(height: 10),
+                      Text(
+                        '• This app is designed to help you manage your passwords securely.',
+                        style: TextStyle(fontSize: 12, color: Colors.white),
+                      ),
+                      Text(
+                        '• You can store, update, and retrieve your passwords with ease.',
+                        style: TextStyle(fontSize: 12, color: Colors.white),
+                      ),
+                      Text(
+                        '• The app ensures your data is encrypted and safe.',
+                        style: TextStyle(fontSize: 12, color: Colors.white),
+                      ),
+                      SizedBox(height: 20),
+                      Text(
+                        '- How to Use This App:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.green,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        '• Go to Home and click on "Generate Password".',
+                        style: TextStyle(fontSize: 12, color: Colors.white),
+                      ),
+                      Text(
+                        '• Enter the website or app name for which you want to generate a password.',
+                        style: TextStyle(fontSize: 12, color: Colors.white),
+                      ),
+                      Text(
+                        '• Choose from multiple options to generate a password.',
+                        style: TextStyle(fontSize: 12, color: Colors.white),
+                      ),
+                      Text(
+                        '• Copy the generated password and don\'t forget to save it.',
+                        style: TextStyle(fontSize: 12, color: Colors.white),
+                      ),
+                      Text(
+                        '• To access saved passwords easily, go to Home and click on "View Password".',
+                        style: TextStyle(fontSize: 12, color: Colors.white),
+                      ),
+                      Text(
+                        '• Search by web or app name to find and copy your password for use.',
+                        style: TextStyle(fontSize: 12, color: Colors.white),
+                      ),
+                      SizedBox(height: 20),
+                      Text(
+                        '- Admin Information:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.green,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        '• Name: Bharat Sirvi',
+                        style: TextStyle(fontSize: 12, color: Colors.white),
+                      ),
+                      Text(
+                        '• Email: bharatsirvi2020@gmail.com',
+                        style: TextStyle(fontSize: 12, color: Colors.white),
+                      ),
+                      SizedBox(height: 10),
+                      CustomTextField(
+                        controller: suggestionController,
+                        labelText: 'Your Suggestion',
+                        labelStyle: TextStyle(color: Colors.white),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.1),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color: Colors.white.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color: Colors.white,
+                            width: 2,
+                          ),
+                        ),
+                        maxLines: 3,
+                        style: TextStyle(
+                            color: Colors.white, decorationThickness: 0),
+                      ),
+                      SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            child: Text('Cancel',
+                                style: TextStyle(color: Colors.red)),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                          TextButton(
+                            child: Text('Send',
+                                style: TextStyle(color: Colors.green)),
+                            onPressed: () {
+                              String suggestion = suggestionController.text;
+                              if (suggestion.isNotEmpty) {
+                                _sendEmail("Suggestion", suggestion);
+                                Navigator.of(context).pop();
+                              } else {
+                                CustomSnackBar.show(
+                                  context,
+                                  'Please provide your suggestion',
+                                  Colors.white,
+                                  textColor: Colors.black,
+                                );
+                              }
+                            },
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                  SizedBox(height: 20),
-                  Text(
-                    '- About This App:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.green,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    '• This app is designed to help you manage your passwords securely.',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  Text(
-                    '• You can store, update, and retrieve your passwords with ease.',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  Text(
-                    '• The app ensures your data is encrypted and safe.',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    '- Admin Information:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.green,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    '• Name: Bharat Sirvi',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  Text(
-                    '• Email: bharatsirvi855@gmail.com',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    '- How to Use This App:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.green,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    '• To add a new password, go to the "Add Password" section.',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  Text(
-                    '• To view your passwords, go to the "View Passwords" section.',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  Text(
-                    '• To update a password, select the password and choose "Edit".',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  Text(
-                    '• To delete a password, select the password and choose "Delete".',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  SizedBox(height: 20),
-                  TextField(
-                    controller: suggestionController,
-                    decoration: InputDecoration(
-                      labelText: 'Your Suggestion',
-                      border: OutlineInputBorder(),
-                    ),
-                    maxLines: 3,
-                  ),
-                  SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        child:
-                            Text('Cancel', style: TextStyle(color: Colors.red)),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                      TextButton(
-                        child:
-                            Text('Send', style: TextStyle(color: Colors.green)),
-                        onPressed: () {
-                          String suggestion = suggestionController.text;
-                          if (suggestion.isNotEmpty) {
-                            // _sendEmail(suggestion);
-                            Navigator.of(context).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content:
-                                      Text('Thank you for your suggestion!')),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text('Please enter a suggestion')),
-                            );
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
   }
 
-  void _sendEmail(String suggestion) async {
+  void _sendEmail(String subject, String body) async {
     final Uri emailUri = Uri(
       scheme: 'mailto',
-      path: 'bharatsirvi855@gmail.com', // Replace with the admin email
+      path: 'bharatsirvi2020@gmail.com', // Replace with the admin email
       query:
-          'subject=${Uri.encodeComponent('User Suggestion')}&body=${Uri.encodeComponent(suggestion)}',
+          'subject=${Uri.encodeComponent(subject)}&body=${Uri.encodeComponent(body)}',
     );
 
     try {
@@ -453,10 +677,138 @@ class _ProfileScreenState extends State<ProfileScreen> {
         throw 'Could not launch $emailUri';
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not send email')),
+      CustomSnackBar.show(
+        context,
+        'An error occurred. Please try again.',
+        Colors.red,
       );
     }
+  }
+
+  void _reportIssue() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        final TextEditingController issueController = TextEditingController();
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.9, // Full width
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color.fromARGB(255, 59, 84, 105),
+                      const Color.fromARGB(255, 2, 36, 76)
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Report an Issue',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Icon(Icons.report_problem, color: Colors.white),
+                        ],
+                      ),
+                      SizedBox(height: 20),
+                      CustomTextField(
+                        controller: issueController,
+                        labelText: 'Describe the issue',
+                        labelStyle: TextStyle(color: Colors.white),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.1),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color: Colors.white.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(
+                            color: Colors.white,
+                            width: 2,
+                          ),
+                        ),
+                        maxLines: 3,
+                        style: TextStyle(
+                            color: Colors.white, decorationThickness: 0),
+                      ),
+                      SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            child: Text('Cancel',
+                                style: TextStyle(color: Colors.red)),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                          TextButton(
+                            child: Text('Report',
+                                style: TextStyle(color: Colors.green)),
+                            onPressed: () {
+                              String issue = issueController.text;
+                              if (issue.isNotEmpty) {
+                                // Implement the logic to handle the issue report
+                                _sendEmail("Issue Report", issue);
+                                Navigator.of(context).pop();
+                              } else {
+                                CustomSnackBar.show(
+                                  context,
+                                  'Please describe the issue',
+                                  Colors.white,
+                                  textColor: Colors.black,
+                                );
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    currentPinController.dispose();
+    newPinController.dispose();
+    confirmPinController.dispose();
+
+    super.dispose();
   }
 
   @override
@@ -485,22 +837,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: const EdgeInsets.all(16.0),
                     child: ListView(
                       children: [
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.account_circle,
-                                size: 80, color: Colors.blue[100]),
-                            Text(
-                              'Account Details',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
+                        // Column(
+                        //   mainAxisAlignment: MainAxisAlignment.start,
+                        //   mainAxisSize: MainAxisSize.min,
+                        //   children: [
+                        //     Icon(Icons.account_circle,
+                        //         size: 80, color: Colors.blue[100]),
+                        //     Text(
+                        //       'Account Details',
+                        //       style: TextStyle(
+                        //         color: Colors.white,
+                        //         fontSize: 24,
+                        //         fontWeight: FontWeight.bold,
+                        //       ),
+                        //     ),
+                        //   ],
+                        // ),
                         SizedBox(height: 20),
                         Card(
                           elevation: 10,
@@ -522,7 +874,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            padding: const EdgeInsets.all(16.0),
+                            padding: const EdgeInsets.all(8.0),
                             child: ListTile(
                               title: RichText(
                                 text: TextSpan(
@@ -573,7 +925,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            padding: const EdgeInsets.all(16.0),
+                            padding: const EdgeInsets.all(8.0),
                             child: ListTile(
                               title: RichText(
                                 text: TextSpan(
@@ -622,7 +974,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            padding: const EdgeInsets.all(16.0),
+                            padding: const EdgeInsets.all(8.0),
                             child: ListTile(
                               title: Text(
                                 'Change Password',
@@ -655,7 +1007,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            padding: const EdgeInsets.all(16.0),
+                            padding: const EdgeInsets.all(8.0),
                             child: ListTile(
                               title: Text(
                                 'Help and Support',
@@ -680,6 +1032,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
+                                  const Color.fromARGB(
+                                      255, 255, 69, 0), // Orange Red
+                                  const Color.fromARGB(
+                                      255, 255, 140, 0) // Dark Orange
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            padding: const EdgeInsets.all(8.0),
+                            child: ListTile(
+                              title: Text(
+                                'Report an Issue',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  fontSize: 16, // Ensure font size consistency
+                                ),
+                              ),
+                              trailing: Icon(Icons.report_problem,
+                                  color: Colors.white70),
+                              onTap: _reportIssue,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        Card(
+                          elevation: 10,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
                                   const Color.fromARGB(255, 77, 2, 2),
                                   const Color.fromARGB(255, 255, 84, 87)
                                 ],
@@ -688,7 +1076,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            padding: const EdgeInsets.all(16.0),
+                            padding: const EdgeInsets.all(8.0),
                             child: ListTile(
                               title: Text(
                                 'Logout',
