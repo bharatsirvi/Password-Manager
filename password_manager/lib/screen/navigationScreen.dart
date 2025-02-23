@@ -132,112 +132,122 @@ class _BottomNavigationState extends State<BottomNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _selectedIndex == 0
-          ? AppBar(
-              automaticallyImplyLeading: false,
-              backgroundColor:
-                  const Color.fromARGB(255, 2, 36, 76), // Dark blue color
-              title: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/images/vaultixLogo.png', // Replace with your logo asset path
-                    height: 40,
-                  ),
-                  SizedBox(width: 5),
-                  Image.asset(
-                    'assets/images/vname4.png', // Replace with your logo asset path
-                    height: 25,
-                  ),
-                ],
-              ),
-              actions: [
-                IconButton(
-                  icon: Icon(Icons.logout),
-                  onPressed: _showLogoutConfirmationDialog,
-                ),
-              ],
-            )
-          : AppBar(
-              automaticallyImplyLeading: false,
-              backgroundColor:
-                  const Color.fromARGB(255, 2, 36, 76), // Dark blue color
-              title: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  ShaderMask(
-                    shaderCallback: (bounds) => RadialGradient(
-                      colors: [
-                        const Color.fromARGB(255, 98, 214, 102),
-                        const Color.fromARGB(255, 69, 128, 71),
-                      ],
-                      center: Alignment.center,
-                      radius: 0.5,
-                    ).createShader(bounds),
-                    child: Icon(
-                      Icons.person_rounded,
-                      size: 40,
-                      color: Colors.white,
+    return WillPopScope(
+      onWillPop: () async {
+        if (_selectedIndex == 0) {
+          return true;
+        } else {
+          _onItemTapped(0);
+          return false;
+        }
+      },
+      child: Scaffold(
+        appBar: _selectedIndex == 0
+            ? AppBar(
+                automaticallyImplyLeading: false,
+                backgroundColor:
+                    const Color.fromARGB(255, 2, 36, 76), // Dark blue color
+                title: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/vaultixLogo.png', // Replace with your logo asset path
+                      height: 40,
                     ),
-                  ),
-                  SizedBox(width: 5),
-                  Image.asset(
-                    'assets/images/profilename.png', // Replace with your logo asset path
-                    height: 25,
+                    SizedBox(width: 5),
+                    Image.asset(
+                      'assets/images/vname4.png', // Replace with your logo asset path
+                      height: 25,
+                    ),
+                  ],
+                ),
+                actions: [
+                  IconButton(
+                    icon: Icon(Icons.logout),
+                    onPressed: _showLogoutConfirmationDialog,
                   ),
                 ],
-              ),
-              actions: [
-                IconButton(
-                  icon: Icon(Icons.logout),
-                  onPressed: _showLogoutConfirmationDialog,
+              )
+            : AppBar(
+                automaticallyImplyLeading: false,
+                backgroundColor:
+                    const Color.fromARGB(255, 2, 36, 76), // Dark blue color
+                title: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    ShaderMask(
+                      shaderCallback: (bounds) => RadialGradient(
+                        colors: [
+                          const Color.fromARGB(255, 98, 214, 102),
+                          const Color.fromARGB(255, 69, 128, 71),
+                        ],
+                        center: Alignment.center,
+                        radius: 0.5,
+                      ).createShader(bounds),
+                      child: Icon(
+                        Icons.person_rounded,
+                        size: 40,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(width: 5),
+                    Image.asset(
+                      'assets/images/profilename.png', // Replace with your logo asset path
+                      height: 25,
+                    ),
+                  ],
                 ),
-              ],
-            ), // Hide AppBar when _selectedIndex is not 0
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (index) {
-          setState(() {
-            _selectedIndex = index;
-            _appBarTitle = index == 0 ? 'Vaultix' : 'Profile';
-          });
-        },
-        children: _widgetOptions.map((widget) {
-          return _FadeSlideTransition(
-            child: widget,
-          );
-        }).toList(),
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 2, 36, 76), // Dark blue color
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              spreadRadius: 5,
-              blurRadius: 7,
-              offset: Offset(0, -1), // changes position of shadow
-            ),
-          ],
+                actions: [
+                  IconButton(
+                    icon: Icon(Icons.logout),
+                    onPressed: _showLogoutConfirmationDialog,
+                  ),
+                ],
+              ), // Hide AppBar when _selectedIndex is not 0
+        body: PageView(
+          controller: _pageController,
+          onPageChanged: (index) {
+            setState(() {
+              _selectedIndex = index;
+              _appBarTitle = index == 0 ? 'Vaultix' : 'Profile';
+            });
+          },
+          children: _widgetOptions.map((widget) {
+            return _FadeSlideTransition(
+              child: widget,
+            );
+          }).toList(),
         ),
-        child: BottomNavigationBar(
-          backgroundColor: Colors
-              .transparent, // Make background transparent to show container color
-          selectedItemColor: Colors.white, // Selected item color
-          unselectedItemColor: Colors.grey, // Unselected item color
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Account',
-            ),
-          ],
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: const Color.fromARGB(255, 2, 36, 76), // Dark blue color
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                spreadRadius: 5,
+                blurRadius: 7,
+                offset: Offset(0, -1), // changes position of shadow
+              ),
+            ],
+          ),
+          child: BottomNavigationBar(
+            backgroundColor: Colors
+                .transparent, // Make background transparent to show container color
+            selectedItemColor: Colors.white, // Selected item color
+            unselectedItemColor: Colors.grey, // Unselected item color
+            items: const <BottomNavigationBarItem>[
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Account',
+              ),
+            ],
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+          ),
         ),
       ),
     );

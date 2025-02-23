@@ -1,7 +1,10 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:password_manager/routes.dart';
+import 'package:password_manager/screen/navigationScreen.dart';
 import 'package:password_manager/utills/customTextField.dart';
 import 'package:password_manager/utills/snakebar.dart';
 import 'package:password_manager/utills/sound.dart';
@@ -28,7 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String userName = 'User Name';
   String phoneNumber = 'Phone Number';
   bool isLoading = true;
-
+  bool isChangingPassword = false;
   @override
   void initState() {
     super.initState();
@@ -248,6 +251,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       currentPinController.clear();
       newPinController.clear();
       confirmPinController.clear();
+      isChangingPassword = false;
     });
   }
 
@@ -261,183 +265,206 @@ class _ProfileScreenState extends State<ProfileScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.9, // Full width
-                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color.fromARGB(255, 59, 84, 105),
-                      const Color.fromARGB(255, 2, 36, 76)
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
+              child: Stack(children: [
+                ClipRRect(
                   borderRadius: BorderRadius.circular(20),
-                ),
-                child: SingleChildScrollView(
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+                  child: Container(
+                    width:
+                        MediaQuery.of(context).size.width * 0.9, // Full width
+                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color.fromARGB(255, 59, 84, 105),
+                          const Color.fromARGB(255, 2, 36, 76)
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: SingleChildScrollView(
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Change Password',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 20,
-                                color: Colors.white,
+                            Row(
+                              children: [
+                                Text(
+                                  'Change Password',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(width: 10),
+                                Icon(
+                                  Icons.change_circle,
+                                  color: Colors.white,
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 20),
+                            CustomTextField(
+                              controller: currentPinController,
+                              labelText: 'Current PIN',
+                              prefixIcon: Icons.lock_outline,
+                              obscureText: !_isCurrentPinVisible,
+                              keyboardType: TextInputType.number,
+                              maxLength: 4,
+                              counterText: '',
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isCurrentPinVisible
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isCurrentPinVisible =
+                                        !_isCurrentPinVisible;
+                                  });
+                                },
                               ),
-                            ),
-                            SizedBox(width: 10),
-                            Icon(
-                              Icons.change_circle,
-                              color: Colors.white,
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 20),
-                        CustomTextField(
-                          controller: currentPinController,
-                          labelText: 'Current PIN',
-                          prefixIcon: Icons.lock_outline,
-                          obscureText: !_isCurrentPinVisible,
-                          keyboardType: TextInputType.number,
-                          maxLength: 4,
-                          counterText: '',
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _isCurrentPinVisible
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: Colors.white,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _isCurrentPinVisible = !_isCurrentPinVisible;
-                              });
-                            },
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your current PIN';
-                            } else if (value.length != 4) {
-                              return 'Enter a 4-digit PIN';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: 20),
-                        CustomTextField(
-                          controller: newPinController,
-                          labelText: 'New PIN',
-                          prefixIcon: Icons.lock_open,
-                          obscureText: !_isNewPinVisible,
-                          keyboardType: TextInputType.number,
-                          maxLength: 4,
-                          counterText: '',
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _isNewPinVisible
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: Colors.white,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _isNewPinVisible = !_isNewPinVisible;
-                              });
-                            },
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your new PIN';
-                            } else if (value.length != 4) {
-                              return 'Enter a 4-digit PIN';
-                            } else if (value == currentPinController.text) {
-                              return 'Same as the current PIN';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: 20),
-                        CustomTextField(
-                          controller: confirmPinController,
-                          labelText: 'Confirm PIN',
-                          prefixIcon: Icons.lock,
-                          obscureText: !_isConfirmPinVisible,
-                          keyboardType: TextInputType.number,
-                          maxLength: 4,
-                          counterText: '',
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _isConfirmPinVisible
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: Colors.white,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _isConfirmPinVisible = !_isConfirmPinVisible;
-                              });
-                            },
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please confirm your new PIN';
-                            } else if (value.length != 4) {
-                              return 'Enter a 4-digit PIN';
-                            } else if (value != newPinController.text) {
-                              return 'PINs do not match';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            TextButton(
-                              child: Text('Cancel',
-                                  style: TextStyle(color: Colors.red)),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                _resetDialogState();
-                              },
-                            ),
-                            TextButton(
-                              child: Text('Change',
-                                  style: TextStyle(color: Colors.green)),
-                              onPressed: () {
-                                if (_formKey.currentState!.validate()) {
-                                  FocusScope.of(context).unfocus();
-                                  String currentPin = currentPinController.text;
-                                  String newPin = newPinController.text;
-                                  String confirmPin = confirmPinController.text;
-
-                                  if (newPin == confirmPin) {
-                                    // Update the PIN in the database
-                                    _updatePin(currentPin, newPin);
-                                  } else {
-                                    CustomSnackBar.show(
-                                      context,
-                                      'New PIN and Confirm PIN do not match',
-                                      Colors.red,
-                                    );
-                                  }
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your current PIN';
+                                } else if (value.length != 4) {
+                                  return 'Enter a 4-digit PIN';
                                 }
+                                return null;
                               },
+                            ),
+                            SizedBox(height: 20),
+                            CustomTextField(
+                              controller: newPinController,
+                              labelText: 'New PIN',
+                              prefixIcon: Icons.lock_open,
+                              obscureText: !_isNewPinVisible,
+                              keyboardType: TextInputType.number,
+                              maxLength: 4,
+                              counterText: '',
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isNewPinVisible
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isNewPinVisible = !_isNewPinVisible;
+                                  });
+                                },
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your new PIN';
+                                } else if (value.length != 4) {
+                                  return 'Enter a 4-digit PIN';
+                                } else if (value == currentPinController.text) {
+                                  return 'Same as the current PIN';
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 20),
+                            CustomTextField(
+                              controller: confirmPinController,
+                              labelText: 'Confirm PIN',
+                              prefixIcon: Icons.lock,
+                              obscureText: !_isConfirmPinVisible,
+                              keyboardType: TextInputType.number,
+                              maxLength: 4,
+                              counterText: '',
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isConfirmPinVisible
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isConfirmPinVisible =
+                                        !_isConfirmPinVisible;
+                                  });
+                                },
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please confirm your new PIN';
+                                } else if (value.length != 4) {
+                                  return 'Enter a 4-digit PIN';
+                                } else if (value != newPinController.text) {
+                                  return 'PINs do not match';
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                TextButton(
+                                  child: Text('Cancel',
+                                      style: TextStyle(color: Colors.red)),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    _resetDialogState();
+                                  },
+                                ),
+                                TextButton(
+                                  child: Text('Change',
+                                      style: TextStyle(color: Colors.green)),
+                                  onPressed: () {
+                                    if (_formKey.currentState!.validate()) {
+                                      FocusScope.of(context).unfocus();
+                                      String currentPin =
+                                          currentPinController.text;
+                                      String newPin = newPinController.text;
+                                      String confirmPin =
+                                          confirmPinController.text;
+
+                                      if (newPin == confirmPin) {
+                                        // Update the PIN in the database
+                                        _updatePin(
+                                            currentPin, newPin, setState);
+                                      } else {
+                                        CustomSnackBar.show(
+                                          context,
+                                          'New PIN and Confirm PIN do not match',
+                                          Colors.red,
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
+                if (isChangingPassword)
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        color: Colors.black.withOpacity(0.5),
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                    ),
+                  ),
+              ]),
             );
           },
         );
@@ -447,7 +474,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  void _updatePin(String currentPin, String newPin) async {
+  void _updatePin(String currentPin, String newPin, Function setState) async {
+    setState(() {
+      isChangingPassword = true;
+    });
     // Implement the logic to update the PIN in the database
     // For example, you can verify the current PIN and then update it with the new PIN
     try {
@@ -462,12 +492,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         CustomSnackBar.show(context, 'PIN updated successfully', Colors.yellow,
             textColor: Colors.black);
       } else {
-        CustomSnackBar.show(
-            context, 'Incorrect PIN. Please try again.', Colors.red);
+        CustomSnackBar.show(context, 'Incorrect PIN.', Colors.red);
       }
     } catch (e) {
       CustomSnackBar.show(
           context, 'An error occurred. Please try again.', Colors.red);
+    } finally {
+      setState(() {
+        isChangingPassword = false;
+      });
     }
   }
 

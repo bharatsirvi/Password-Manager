@@ -162,6 +162,9 @@ class _ViewPasswordsScreenState extends State<ViewPasswordsScreen> {
           .doc(docId)
           .delete();
     }
+    setState(() {
+      filteredPasswords = List.from(filteredPasswords);
+    });
   }
 
   void _showDeleteConfirmationDialog(String docId, int index) async {

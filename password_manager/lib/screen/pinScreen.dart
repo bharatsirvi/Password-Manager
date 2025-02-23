@@ -65,8 +65,11 @@ class _PinScreenState extends State<PinScreen> {
     } else {
       CustomSnackBar.show(context, 'User not logged in.', Colors.red);
     }
-
-    setState(() => isLoading = false);
+    setState(() {
+      isLoading = false;
+      currentPin = "";
+      pinController.clear();
+    });
   }
 
   void _showLogoutConfirmationDialog() async {
@@ -219,6 +222,7 @@ class _PinScreenState extends State<PinScreen> {
                       obscuringCharacter: '*',
                       appContext: context,
                       length: 4,
+                      controller: pinController,
                       animationType: AnimationType.fade,
                       onCompleted: (value) {
                         FocusScope.of(context).unfocus(); //
