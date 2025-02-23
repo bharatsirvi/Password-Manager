@@ -29,6 +29,8 @@ class CustomTextField extends StatelessWidget {
   final TextStyle? labelStyle;
   final TextStyle? style;
 
+  final String? prefixText;
+
   const CustomTextField({
     Key? key,
     required this.controller,
@@ -57,6 +59,7 @@ class CustomTextField extends StatelessWidget {
     this.contentPadding,
     this.labelStyle,
     this.style,
+    this.prefixText,
   }) : super(key: key);
 
   @override
@@ -80,6 +83,7 @@ class CustomTextField extends StatelessWidget {
       maxLines: maxLines,
       decoration: InputDecoration(
         counterText: counterText,
+        prefixText: prefixText,
         labelText: labelText,
         labelStyle: labelStyle ??
             TextStyle(

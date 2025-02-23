@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import 'package:password_manager/routes.dart';
 import 'package:password_manager/utills/authWrapper.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:password_manager/screen/pinScreen.dart';
+import 'package:password_manager/screen/setpinScreen.dart';
+import 'package:password_manager/screen/signupScreen.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -12,18 +16,46 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   bool _visible = false;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
     super.initState();
-    _navigateToHome();
     _startFadeAnimation();
+    _navigateToNextScreen();
   }
 
-  _navigateToHome() async {
-    await Future.delayed(Duration(seconds: 3), () {});
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (_) => AuthWrapper()));
+  Future<void> _navigateToNextScreen() async {
+    await Future.delayed(Duration(seconds: 3)); // Splash screen duration
+
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      bool passwordExists = await _checkIfPasswordExists(user.uid);
+      if (passwordExists) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => PinScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => SetPinScreen()),
+        );
+      }
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => RegisterScreen()),
+      );
+    }
+  }
+
+  Future<bool> _checkIfPasswordExists(String uid) async {
+    DocumentSnapshot userDoc =
+        await _firestore.collection('users').doc(uid).get();
+    return userDoc.exists &&
+        userDoc['password'] != null &&
+        userDoc['password'].isNotEmpty;
   }
 
   _startFadeAnimation() async {

@@ -48,6 +48,8 @@ class AuthService {
     required Function(String) onCodeSent,
     required Function(String) onError,
   }) async {
+    print(
+        "Sending OTP to............................................................. $phoneNumber");
     try {
       await _auth.verifyPhoneNumber(
         phoneNumber: phoneNumber,
@@ -55,14 +57,25 @@ class AuthService {
           await _auth.signInWithCredential(credential);
         },
         verificationFailed: (FirebaseAuthException e) {
+          print(
+              "Verification failed.............................................................${e.message}");
+
           onError(e.message ?? "Verification failed");
         },
         codeSent: (String verificationId, int? resendToken) {
+          print(
+              "Code sent to............................................................. $phoneNumber");
           onCodeSent(verificationId);
         },
-        codeAutoRetrievalTimeout: (String verificationId) {},
+        codeAutoRetrievalTimeout: (String verificationId) {
+          print(
+              "Auto retrieval timeout...............................................");
+        },
+        timeout: Duration(seconds: 60),
       );
     } catch (e) {
+      print(
+          "Error sending OTP:......................................................................... ${e.toString()}");
       return onError("Error sending OTP");
     }
   }

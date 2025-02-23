@@ -104,9 +104,6 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
       }
 
       platformController.clear();
-      setState(() {
-        generatedPassword = '';
-      });
     } else {
       CustomSnackBar.show(context, 'User not logged in.', Colors.red);
     }

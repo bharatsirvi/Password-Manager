@@ -49,6 +49,9 @@ class _LoginScreenState extends State<LoginScreen> {
         await _authService.verifyPhonePassword(phone, password);
 
     if (result == VerificationResult.success) {
+      "Phone number and password verified...................";
+      print("Phone number and password verified...................");
+
       print("phone number and password verified...................");
       _sendOTP(phone);
     } else {

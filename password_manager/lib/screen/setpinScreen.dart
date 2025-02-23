@@ -34,9 +34,21 @@ class _SetPinScreenState extends State<SetPinScreen> {
           );
 
           // Navigate to Home or Dashboard with animation
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
-            _createFadeSlideTransitionRoute(BottomNavigation()),
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  BottomNavigation(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
+              transitionDuration:
+                  Duration(milliseconds: 500), // Adjust duration as needed
+            ),
           );
         } else {
           CustomSnackBar.show(context, 'User not logged in.', Colors.red);
@@ -46,29 +58,6 @@ class _SetPinScreenState extends State<SetPinScreen> {
             context, 'PINs do not match. Try again.', Colors.red);
       }
     }
-  }
-
-  void _deleteUser() async {
-    User? user = _auth.currentUser;
-    if (user != null) {
-      try {
-        await _userService.deleteUserData(user.uid);
-        await user.delete();
-
-        Navigator.push(
-          context,
-          _createFadeSlideTransitionRoute(BottomNavigation()),
-        );
-      } catch (e) {
-        CustomSnackBar.show(context, 'Please try again.', Colors.red);
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _deleteUser();
-    super.dispose();
   }
 
   @override
@@ -150,7 +139,6 @@ class _SetPinScreenState extends State<SetPinScreen> {
                           labelText: 'Confirm PIN',
                           keyboardType: TextInputType.number,
                           obscureText: !_isConfirmPinVisible,
-                          maxLength: 4,
                           prefixIcon: Icons.lock_outline,
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -165,6 +153,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
                               });
                             },
                           ),
+                          maxLength: 4,
                           counterText: '',
                           validator: (value) {
                             if (value == null || value.length != 4) {
@@ -202,31 +191,4 @@ class _SetPinScreenState extends State<SetPinScreen> {
       ),
     );
   }
-}
-
-// Function to create a fade and slide transition route
-Route _createFadeSlideTransitionRoute(Widget page) {
-  return PageRouteBuilder(
-    pageBuilder: (context, animation, secondaryAnimation) => page,
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      const begin = Offset(1.0, 0.0); // Slide from right to left
-      const end = Offset.zero;
-      const curve = Curves.easeInOut;
-
-      var slideTween =
-          Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-      var slideAnimation = animation.drive(slideTween);
-
-      var fadeTween = Tween(begin: 0.0, end: 1.0);
-      var fadeAnimation = animation.drive(fadeTween);
-
-      return FadeTransition(
-        opacity: fadeAnimation,
-        child: SlideTransition(
-          position: slideAnimation,
-          child: child,
-        ),
-      );
-    },
-  );
 }

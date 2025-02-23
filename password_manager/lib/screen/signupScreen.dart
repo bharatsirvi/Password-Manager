@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:otp_text_field/otp_text_field.dart';
-import 'package:otp_text_field/style.dart';
-import 'package:password_manager/routes.dart';
+
 import 'package:password_manager/screen/loginScreen.dart';
+import 'package:password_manager/screen/setpinScreen.dart';
 import 'package:password_manager/utills/customTextField.dart';
 import 'package:password_manager/utills/snakebar.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+
 import '../services/auth_service.dart';
+
 import '../services/user_service.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController otpController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String verificationId = '';
   bool isOTPSent = false;
@@ -47,9 +49,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    print(
+        "phone...............................,................................................: ${phoneController.text.trim()}");
     _authService.sendOTP(
       phoneNumber: '+91${phoneController.text.trim()}',
       onCodeSent: (verId) {
+        setState(() => isLoading = false);
         setState(() {
           verificationId = verId;
           isOTPSent = true;
@@ -57,7 +62,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         });
       },
       onError: (errorMsg) {
-        CustomSnackBar.show(context, errorMsg, Colors.red);
+        print(
+            "Error sending OTP:.................................................................................................................................... $errorMsg");
+        CustomSnackBar.show(context, errorMsg, Colors.red,
+            textColor: Colors.white);
         setState(() => isLoading = false);
       },
     );
@@ -72,6 +80,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
 
     if (credential != null && credential.user != null) {
+      print(
+          "User ID:................................................................................. ${credential.user!.uid}");
       await _userService.saveUserData(
         credential.user!.uid,
         "+91${phoneController.text.trim()}",
@@ -79,7 +89,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         '', // Assuming you don't have a password at this stage
       );
 
-      Navigator.pushReplacementNamed(context, AppRoutes.setPin);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => SetPinScreen()),
+      );
     } else {
       CustomSnackBar.show(context, 'Invalid OTP', Colors.red);
     }
@@ -218,6 +231,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: PinCodeTextField(
                           autoFocus: true,
                           appContext: context,
+                          controller: otpController,
                           length: 6,
                           animationType: AnimationType.fade,
                           onCompleted: (code) {
@@ -226,7 +240,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             _verifyOTP();
                           },
                           enablePinAutofill: true,
-                          // enableActiveFill: true,
                           textGradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
