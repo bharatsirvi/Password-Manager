@@ -1,13 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import 'package:password_manager/provider/notificationProvider.dart';
 import 'package:password_manager/utills/customTextField.dart';
 import 'package:password_manager/utills/platform.dart';
 import 'package:password_manager/utills/snakebar.dart';
-import 'package:password_manager/services/auth_service.dart';
 import 'dart:math';
+
+import 'package:provider/provider.dart';
 
 class GeneratePasswordScreen extends StatefulWidget {
   @override
@@ -19,7 +20,6 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final AuthService _authService = AuthService();
   String generatedPassword = '';
   int passwordLength = 12;
   bool includeUppercase = true;
@@ -86,7 +86,9 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
         CustomSnackBar.show(
             context, 'Password updated successfully!', Colors.yellow,
             textColor: Colors.black);
-        ;
+        Provider.of<NotificationsProvider>(context, listen: false)
+            .addNotification(
+                'Password Updated', 'Password for $platform updated', 'update');
       } else {
         // Create a new document
         await _firestore
@@ -101,6 +103,9 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
         CustomSnackBar.show(
             context, 'Password saved successfully!', Color(0xFF00FF7F),
             textColor: Colors.black);
+        Provider.of<NotificationsProvider>(context, listen: false)
+            .addNotification(
+                'Password Saved', 'Password for $platform saved', 'success');
       }
 
       platformController.clear();

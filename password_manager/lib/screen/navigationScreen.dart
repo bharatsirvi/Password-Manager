@@ -1,10 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import 'package:password_manager/routes.dart';
 import 'package:password_manager/screen/homeScreen.dart';
+import 'package:password_manager/screen/notificationScreen.dart';
 import 'package:password_manager/screen/profileScreen.dart';
+import 'package:password_manager/provider/notificationProvider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:password_manager/utills/sound.dart';
+import 'package:badges/badges.dart' as badges;
 
 class BottomNavigation extends StatefulWidget {
   const BottomNavigation({super.key});
@@ -162,12 +167,12 @@ class _BottomNavigationState extends State<BottomNavigation> {
                   ],
                 ),
                 actions: [
-                  IconButton(
-                    icon: Icon(Icons.logout),
-                    onPressed: _showLogoutConfirmationDialog,
-                  ),
-                ],
-              )
+                    NotificationIconWithBadge(),
+                    IconButton(
+                      icon: Icon(Icons.logout),
+                      onPressed: _showLogoutConfirmationDialog,
+                    ),
+                  ])
             : AppBar(
                 automaticallyImplyLeading: false,
                 backgroundColor:
@@ -198,6 +203,7 @@ class _BottomNavigationState extends State<BottomNavigation> {
                   ],
                 ),
                 actions: [
+                  NotificationIconWithBadge(),
                   IconButton(
                     icon: Icon(Icons.logout),
                     onPressed: _showLogoutConfirmationDialog,
@@ -285,6 +291,120 @@ class _FadeSlideTransition extends StatelessWidget {
         );
       },
       child: child,
+    );
+  }
+}
+
+class NotificationIconWithBadge extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final notificationCount =
+        Provider.of<NotificationsProvider>(context).notificationCount;
+
+    return badges.Badge(
+      gradient: LinearGradient(
+        tileMode: TileMode.clamp,
+        colors: [
+          const Color.fromARGB(125, 244, 67, 54),
+          const Color.fromARGB(137, 255, 86, 34)
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      shape: badges.BadgeShape.circle, // Badge shape
+
+      position: badges.BadgePosition.topEnd(top: -2, end: 6), // Adjust position
+      badgeContent: Text(
+        '$notificationCount',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+
+      // Badge background color
+      padding: EdgeInsets.all(6), // Adjust padding
+      borderRadius: BorderRadius.circular(10), // Rounded corners
+      elevation: 2, // Shadow
+      showBadge:
+          notificationCount > 0, // Show badge only when there are notifications
+      child: IconButton(
+        icon: Icon(Icons.notifications, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  NotificationScreen(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                const begin = Offset(1.0, 0.0);
+                const end = Offset.zero;
+                const curve = Curves.ease;
+
+                var tween = Tween(begin: begin, end: end)
+                    .chain(CurveTween(curve: curve));
+
+                return SlideTransition(
+                  position: animation.drive(tween),
+                  child: child,
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class AnimatedNotificationBadge extends StatelessWidget {
+  final int count;
+
+  const AnimatedNotificationBadge({required this.count});
+  // Adjust size for double-digit numbers
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: Duration(milliseconds: 300),
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return ScaleTransition(scale: animation, child: child);
+      },
+      child: Container(
+        key: ValueKey<int>(count),
+        width: 20,
+        height: 20,
+        decoration: BoxDecoration(
+          color: Colors.red,
+          gradient: LinearGradient(
+            colors: [Colors.red, Colors.deepOrange],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.red.withOpacity(0.5),
+              spreadRadius: 1,
+              blurRadius: 5,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            '$count',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
     );
   }
 }

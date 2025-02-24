@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:password_manager/provider/notificationProvider.dart';
 import 'package:password_manager/routes.dart';
 import 'package:password_manager/screen/navigationScreen.dart';
 import 'package:password_manager/utills/customTextField.dart';
 import 'package:password_manager/utills/snakebar.dart';
 import 'package:password_manager/utills/sound.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -489,6 +491,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Navigator.of(context).pop();
         CustomSnackBar.show(context, 'PIN updated successfully', Colors.yellow,
             textColor: Colors.black);
+        Provider.of<NotificationsProvider>(context, listen: false)
+            .addNotification('Password Changed',
+                'Your password has been changed successfully.', 'update');
       } else {
         CustomSnackBar.show(context, 'Incorrect PIN.', Colors.red);
       }
@@ -704,6 +709,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       if (await canLaunchUrl(emailUri)) {
         await launchUrl(emailUri);
+
+        Provider.of<NotificationsProvider>(context, listen: false)
+            .addNotification("Thank you!",
+                "Your ${subject} has been sent successfully.", "neutral");
       } else {
         throw 'Could not launch $emailUri';
       }

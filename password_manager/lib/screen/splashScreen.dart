@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import 'package:password_manager/utills/authWrapper.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:password_manager/screen/pinScreen.dart';
 import 'package:password_manager/screen/setpinScreen.dart';
 import 'package:password_manager/screen/signupScreen.dart';
+import 'package:provider/provider.dart';
+import 'package:password_manager/provider/notificationProvider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -22,12 +24,29 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     _startFadeAnimation();
-    _navigateToNextScreen();
+    _loadNotificationsAndNavigate();
   }
 
-  Future<void> _navigateToNextScreen() async {
-    await Future.delayed(Duration(seconds: 3)); // Splash screen duration
+  Future<void> _loadNotificationsAndNavigate() async {
+    await Future.delayed(Duration(seconds: 3));
 
+    final prefs = await SharedPreferences.getInstance();
+    final notificationsString = prefs.getString('notifications');
+    List<Map<String, String>> notifications = [];
+    int notificationCount = 0;
+
+    if (notificationsString != null) {
+      List<dynamic> decodedList = jsonDecode(notificationsString);
+      notifications =
+          decodedList.map((item) => Map<String, String>.from(item)).toList();
+      notificationCount = prefs.getInt('notificationCount') ?? 0;
+    }
+
+    // Set notifications into the provider
+    Provider.of<NotificationsProvider>(context, listen: false)
+        .setNotifications(notifications, notificationCount);
+
+    // Navigate to the next screen
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       bool passwordExists = await _checkIfPasswordExists(user.uid);
@@ -51,11 +70,16 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<bool> _checkIfPasswordExists(String uid) async {
-    DocumentSnapshot userDoc =
-        await _firestore.collection('users').doc(uid).get();
-    return userDoc.exists &&
-        userDoc['password'] != null &&
-        userDoc['password'].isNotEmpty;
+    try {
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(uid).get();
+      return userDoc.exists &&
+          userDoc['password'] != null &&
+          userDoc['password'].isNotEmpty;
+    } catch (e) {
+      print('Error checking if password exists: $e');
+      return false;
+    }
   }
 
   _startFadeAnimation() async {
