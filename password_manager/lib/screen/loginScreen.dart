@@ -1,12 +1,19 @@
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:password_manager/provider/notificationProvider.dart';
 import 'package:password_manager/screen/navigationScreen.dart';
 import 'package:password_manager/utills/customTextField.dart';
+import 'package:password_manager/utills/secure_storage.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:password_manager/routes.dart';
 import 'package:password_manager/screen/signupScreen.dart';
 import 'package:password_manager/utills/snakebar.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 
@@ -34,7 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final AuthService _authService = AuthService();
   final UserService _userService = UserService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   void _verifyPhoneAndPassword() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -91,12 +98,14 @@ class _LoginScreenState extends State<LoginScreen> {
   // **Step 3: Verify OTP**
   void _verifyOTP() async {
     setState(() => isLoading = true);
-    var credential = await _authService.verifyOTP(
+    UserCredential? credential = await _authService.verifyOTP(
       verificationId: verificationId,
       otp: otp,
     );
-
-    if (credential?.user != null) {
+    User? user = credential?.user;
+    if (user != null) {
+      await _retrieveAndStoreEncryptionKey();
+      await _overrideNotifications(user.uid);
       // **Login Successful, Navigate to Home**
       Navigator.pushReplacement(
         context,
@@ -118,6 +127,48 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() => isLoading = false);
+  }
+
+  Future<void> _retrieveAndStoreEncryptionKey() async {
+    try {
+      String? encryptionKey =
+          await SecureStorageUtil.getEncryptionKeyFromFirestore();
+      if (encryptionKey != null) {
+        await SecureStorageUtil.saveEncryptionKeyLocally(encryptionKey);
+        print('Encryption key retrieved and stored locally.');
+      } else {
+        print('Encryption key not found in Firestore.');
+      }
+    } catch (e) {
+      print('Error retrieving encryption key: $e');
+    }
+  }
+
+  Future<void> _overrideNotifications(String uid) async {
+    try {
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(uid).get();
+      if (userDoc.exists && userDoc.data() != null) {
+        var data = userDoc.data() as Map<String, dynamic>;
+        if (data.containsKey('notifications')) {
+          List<dynamic> decodedList = data['notifications'];
+          List<Map<String, String>> notifications = decodedList
+              .map((item) => Map<String, String>.from(item))
+              .toList();
+          int notificationCount = data['notificationCount'] ?? 0;
+
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('notifications', jsonEncode(notifications));
+          await prefs.setInt('notificationCount', notificationCount);
+
+          Provider.of<NotificationsProvider>(context, listen: false)
+              .setNotifications(notifications, notificationCount);
+          print('Notifications overridden in SharedPreferences.');
+        }
+      }
+    } catch (e) {
+      print('Error overriding notifications: $e');
+    }
   }
 
   void _resetPassword() async {

@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
+
 import 'package:provider/provider.dart';
 import 'package:password_manager/routes.dart';
 import 'package:password_manager/screen/homeScreen.dart';
@@ -10,6 +14,8 @@ import 'package:password_manager/provider/notificationProvider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:password_manager/utills/sound.dart';
 import 'package:badges/badges.dart' as badges;
+import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
+import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
 
 class BottomNavigation extends StatefulWidget {
   const BottomNavigation({super.key});
@@ -18,11 +24,15 @@ class BottomNavigation extends StatefulWidget {
   State<BottomNavigation> createState() => _BottomNavigationState();
 }
 
-class _BottomNavigationState extends State<BottomNavigation> {
+class _BottomNavigationState extends State<BottomNavigation>
+    with TickerProviderStateMixin {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   int _selectedIndex = 0;
   String _appBarTitle = 'Vaultix';
   final PageController _pageController = PageController();
+
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   void _logout() async {
     await _auth.signOut();
@@ -137,13 +147,21 @@ class _BottomNavigationState extends State<BottomNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      // Disable default back button behavior
+      onPopInvokedWithResult: (bool result, dynamic data) {
         if (_selectedIndex == 0) {
-          return true;
+          // Close the app if on the Home screen
+
+          SystemChannels.platform.invokeMethod('SystemNavigator.pop');
         } else {
-          _onItemTapped(0);
-          return false;
+          // Navigate back to the Home screen if on the Profile screen
+          setState(() {
+            _selectedIndex = 0;
+            _appBarTitle = 'Vaultix';
+            _onItemTapped(0);
+          });
+          // _pageController.jumpToPage(0);
         }
       },
       child: Scaffold(
@@ -219,41 +237,51 @@ class _BottomNavigationState extends State<BottomNavigation> {
             });
           },
           children: _widgetOptions.map((widget) {
-            return _FadeSlideTransition(
-              child: widget,
-            );
+            return widget;
+            // _FadeSlideTransition(
+            //   child: widget,
+            // );
           }).toList(),
         ),
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
             color: const Color.fromARGB(255, 2, 36, 76), // Dark blue color
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                spreadRadius: 5,
-                blurRadius: 7,
-                offset: Offset(0, -1), // changes position of shadow
-              ),
-            ],
           ),
-          child: BottomNavigationBar(
-            backgroundColor: Colors
-                .transparent, // Make background transparent to show container color
-            selectedItemColor: Colors.white, // Selected item color
-            unselectedItemColor: Colors.grey, // Unselected item color
-            items: const <BottomNavigationBarItem>[
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home),
+          child: CurvedNavigationBar(
+            backgroundColor: Colors.transparent,
+            // color: const Color.fromARGB(123, 59, 84, 105),
+            // buttonBackgroundColor: const Color.fromARGB(123, 59, 84, 105),
+            color: const Color.fromARGB(121, 59, 94, 124),
+            buttonBackgroundColor: const Color.fromARGB(121, 59, 94, 105),
+            height: 60,
+            items: [
+              CurvedNavigationBarItem(
+                child: Icon(Icons.home),
                 label: 'Home',
               ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person),
-                label: 'Account',
+              CurvedNavigationBarItem(
+                child: Icon(Icons.person),
+                label: 'Profile',
               ),
             ],
-            currentIndex: _selectedIndex,
+            index: _selectedIndex,
             onTap: _onItemTapped,
           ),
+          // BottomNavigationBar(
+
+          //   items: const <BottomNavigationBarItem>[
+          //     BottomNavigationBarItem(
+          //       icon: Icon(Icons.home),
+          //       label: 'Home',
+          //     ),
+          //     BottomNavigationBarItem(
+          //       icon: Icon(Icons.person),
+          //       label: 'Account',
+          //     ),
+          //   ],
+          //   currentIndex: _selectedIndex,
+          //   onTap: _onItemTapped,
+          // ),
         ),
       ),
     );
@@ -301,59 +329,90 @@ class NotificationIconWithBadge extends StatelessWidget {
     final notificationCount =
         Provider.of<NotificationsProvider>(context).notificationCount;
 
-    return badges.Badge(
-      gradient: LinearGradient(
-        tileMode: TileMode.clamp,
-        colors: [
-          const Color.fromARGB(125, 244, 67, 54),
-          const Color.fromARGB(137, 255, 86, 34)
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      shape: badges.BadgeShape.circle, // Badge shape
+    return InkWell(
+      borderRadius: BorderRadius.all(Radius.circular(50)),
+      onTap: () {
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                NotificationScreen(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              const begin = Offset(1.0, 0.0);
+              const end = Offset.zero;
+              const curve = Curves.ease;
 
-      position: badges.BadgePosition.topEnd(top: -2, end: 6), // Adjust position
-      badgeContent: Text(
-        '$notificationCount',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
+              var tween =
+                  Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+
+              return SlideTransition(
+                position: animation.drive(tween),
+                child: child,
+              );
+            },
+          ),
+        );
+      },
+      child: badges.Badge(
+        gradient: LinearGradient(
+          tileMode: TileMode.clamp,
+          colors: [
+            const Color.fromARGB(125, 244, 67, 54),
+            const Color.fromARGB(137, 255, 86, 34)
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-      ),
+        shape: badges.BadgeShape.circle, // Badge shape
 
-      // Badge background color
-      padding: EdgeInsets.all(6), // Adjust padding
-      borderRadius: BorderRadius.circular(10), // Rounded corners
-      elevation: 2, // Shadow
-      showBadge:
-          notificationCount > 0, // Show badge only when there are notifications
-      child: IconButton(
-        icon: Icon(Icons.notifications, color: Colors.white),
-        onPressed: () {
-          Navigator.push(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) =>
-                  NotificationScreen(),
-              transitionsBuilder:
-                  (context, animation, secondaryAnimation, child) {
-                const begin = Offset(1.0, 0.0);
-                const end = Offset.zero;
-                const curve = Curves.ease;
+        position:
+            badges.BadgePosition.topEnd(top: -2, end: 6), // Adjust position
+        badgeContent: Text(
+          '$notificationCount',
+          key: ValueKey<int>(notificationCount),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: notificationCount > 9 ? 10 : 12, // Adjust font size
+            fontWeight: FontWeight.bold,
+          ),
+        ),
 
-                var tween = Tween(begin: begin, end: end)
-                    .chain(CurveTween(curve: curve));
+        // Badge background color
+        padding: EdgeInsets.all(6), // Adjust padding
+        borderRadius: BorderRadius.circular(10), // Rounded corners
+        elevation: 2, // Shadow
+        animationType: badges.BadgeAnimationType.scale, // Animation type
+        toAnimate: true,
+        animationDuration: Duration(milliseconds: 300),
+        showBadge: notificationCount >
+            0, // Show badge only when there are notifications
+        child: IconButton(
+          icon: Icon(Icons.notifications, color: Colors.white),
+          onPressed: () {
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    NotificationScreen(),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  const begin = Offset(1.0, 0.0);
+                  const end = Offset.zero;
+                  const curve = Curves.ease;
 
-                return SlideTransition(
-                  position: animation.drive(tween),
-                  child: child,
-                );
-              },
-            ),
-          );
-        },
+                  var tween = Tween(begin: begin, end: end)
+                      .chain(CurveTween(curve: curve));
+
+                  return SlideTransition(
+                    position: animation.drive(tween),
+                    child: child,
+                  );
+                },
+              ),
+            );
+          },
+        ),
       ),
     );
   }

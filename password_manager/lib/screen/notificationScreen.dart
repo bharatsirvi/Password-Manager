@@ -127,7 +127,8 @@ class NotificationScreen extends StatelessWidget {
       case 'error':
         return Colors.red;
       case 'warning':
-        return Colors.yellow;
+      case 'delete':
+        return Colors.red;
       case 'info':
         return Colors.blue;
       case 'update':

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class NotificationsProvider with ChangeNotifier {
   List<Map<String, String>> _notifications = [];
@@ -9,24 +11,24 @@ class NotificationsProvider with ChangeNotifier {
   List<Map<String, String>> get notifications => _notifications;
   int get notificationCount => _notificationCount;
 
-  void addNotification(String title, String body, String type) {
+  void addNotification(String title, String body, String type) async {
     _notifications.add({'title': title, 'body': body, 'type': type});
     _notificationCount++;
-    _saveNotifications();
+    await _saveNotifications();
     notifyListeners();
   }
 
-  void removeNotification(int index) {
+  void removeNotification(int index) async {
     _notifications.removeAt(index);
     _notificationCount--;
-    _saveNotifications();
+    await _saveNotifications();
     notifyListeners();
   }
 
-  void clearNotifications() {
+  void clearNotifications() async {
     _notifications.clear();
     _notificationCount = 0;
-    _saveNotifications();
+    await _saveNotifications();
     notifyListeners();
   }
 
@@ -40,5 +42,13 @@ class NotificationsProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     prefs.setString('notifications', jsonEncode(_notifications));
     prefs.setInt('notificationCount', _notificationCount);
+
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'notifications': _notifications,
+        'notificationCount': _notificationCount,
+      }, SetOptions(merge: true));
+    }
   }
 }

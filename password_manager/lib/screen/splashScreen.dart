@@ -6,6 +6,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:password_manager/screen/pinScreen.dart';
 import 'package:password_manager/screen/setpinScreen.dart';
 import 'package:password_manager/screen/signupScreen.dart';
+import 'package:password_manager/utills/encryption.dart';
+import 'package:password_manager/utills/generateEncrption.dart';
+import 'package:password_manager/utills/secure_storage.dart';
 import 'package:provider/provider.dart';
 import 'package:password_manager/provider/notificationProvider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,6 +29,8 @@ class _SplashScreenState extends State<SplashScreen> {
     _startFadeAnimation();
     _loadNotificationsAndNavigate();
   }
+
+// Usage
 
   Future<void> _loadNotificationsAndNavigate() async {
     await Future.delayed(Duration(seconds: 3));
@@ -48,7 +53,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // Navigate to the next screen
     User? user = FirebaseAuth.instance.currentUser;
+
     if (user != null) {
+      print(
+          'User is already signed in............................................................................${user.phoneNumber}');
       bool passwordExists = await _checkIfPasswordExists(user.uid);
       if (passwordExists) {
         Navigator.pushReplacement(

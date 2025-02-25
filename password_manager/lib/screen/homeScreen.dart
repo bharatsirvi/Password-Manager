@@ -8,152 +8,147 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        // Exit the app when the back button is pressed
-        SystemNavigator.pop();
-        return false;
-      },
-      child: Scaffold(
-        body: Stack(
-          children: [
-            // Gradient background color
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color.fromARGB(255, 59, 84, 105),
-                    const Color.fromARGB(255, 2, 36, 76)
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
+    print(
+        "Home Screen build called ............................................");
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Gradient background color
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color.fromARGB(255, 59, 84, 105),
+                  const Color.fromARGB(255, 2, 36, 76)
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
             ),
-            // Content
-            Center(
-              child: SingleChildScrollView(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        SizedBox(
-                          height: 200,
-                          width: 300, // Set a fixed width for the card
-                          child: Card(
-                            elevation: 10,
-                            shape: RoundedRectangleBorder(
+          ),
+          // Contentxs
+          Center(
+            child: SingleChildScrollView(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      SizedBox(
+                        height: 200,
+                        width: 300, // Set a fixed width for the card
+                        child: Card(
+                          elevation: 10,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Ink(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  const Color.fromARGB(255, 4, 154, 9),
+                                  const Color.fromARGB(255, 0, 97, 6)
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Ink(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    const Color.fromARGB(255, 4, 154, 9),
-                                    const Color.fromARGB(255, 0, 97, 6)
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(20),
+                              splashColor: Colors.white.withOpacity(0.3),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  _createSlideTransitionRoute(
+                                      GeneratePasswordScreen()),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(24.0),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.vpn_key,
+                                        size: 80, color: Colors.white),
+                                    SizedBox(height: 10),
+                                    Text(
+                                      'Generate Password',
+                                      style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white),
+                                    ),
                                   ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(20),
-                                splashColor: Colors.white.withOpacity(0.3),
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    _createSlideTransitionRoute(
-                                        GeneratePasswordScreen()),
-                                  );
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(24.0),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.vpn_key,
-                                          size: 80, color: Colors.white),
-                                      SizedBox(height: 10),
-                                      Text(
-                                        'Generate Password',
-                                        style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white),
-                                      ),
-                                    ],
-                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                        SizedBox(height: 20),
-                        SizedBox(
-                          height: 200,
-                          width: 300, // Set a fixed width for the card
-                          child: Card(
-                            elevation: 10,
-                            shape: RoundedRectangleBorder(
+                      ),
+                      SizedBox(height: 20),
+                      SizedBox(
+                        height: 200,
+                        width: 300, // Set a fixed width for the card
+                        child: Card(
+                          elevation: 10,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Ink(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  const Color.fromARGB(255, 4, 90, 159),
+                                  const Color.fromARGB(255, 0, 135, 228),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: Ink(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    const Color.fromARGB(255, 4, 90, 159),
-                                    const Color.fromARGB(255, 0, 135, 228),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(20),
+                              splashColor: Colors.white.withOpacity(0.3),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  _createSlideTransitionRoute(
+                                      ViewPasswordsScreen()),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(24.0),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.remove_red_eye,
+                                        size: 80, color: Colors.white),
+                                    SizedBox(height: 10),
+                                    Text(
+                                      'View Passwords',
+                                      style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white),
+                                    ),
                                   ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(20),
-                                splashColor: Colors.white.withOpacity(0.3),
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    _createSlideTransitionRoute(
-                                        ViewPasswordsScreen()),
-                                  );
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(24.0),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.remove_red_eye,
-                                          size: 80, color: Colors.white),
-                                      SizedBox(height: 10),
-                                      Text(
-                                        'View Passwords',
-                                        style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white),
-                                      ),
-                                    ],
-                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

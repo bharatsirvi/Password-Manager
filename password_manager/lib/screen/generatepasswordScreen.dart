@@ -4,7 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:password_manager/provider/notificationProvider.dart';
 import 'package:password_manager/utills/customTextField.dart';
+import 'package:password_manager/utills/encryption.dart';
 import 'package:password_manager/utills/platform.dart';
+import 'package:password_manager/utills/secure_storage.dart';
 import 'package:password_manager/utills/snakebar.dart';
 import 'dart:math';
 
@@ -16,17 +18,17 @@ class GeneratePasswordScreen extends StatefulWidget {
 }
 
 class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
-  final TextEditingController platformController = TextEditingController();
+  final TextEditingController _platformController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  String generatedPassword = '';
+  String _generatedPassword = '';
   int passwordLength = 12;
   bool includeUppercase = true;
   bool includeLowercase = true;
   bool includeNumbers = true;
   bool includeSymbols = true;
-  bool isLoading = false;
+  bool _isLoading = false;
 
   String _generatePassword() {
     const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -45,27 +47,134 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
         passwordLength, (index) => chars[random.nextInt(chars.length)]).join();
   }
 
+  // void _savePassword() async {
+  //   if (!_formKey.currentState!.validate()) {
+  //     return;
+  //   }
+  //   setState(() {
+  //     isLoading = true;
+  //   });
+
+  //   String platform = platformController.text.trim().toLowerCase();
+
+  //   if (generatedPassword.isEmpty) {
+  //     CustomSnackBar.show(context, 'Please generate a password.', Colors.red);
+  //     setState(() {
+  //       isLoading = false;
+  //     });
+  //     return;
+  //   }
+
+  //   User? user = _auth.currentUser;
+  //   if (user != null) {
+  //     String encryptedPassword =
+  //         await EncryptionUtil.encryptPassword(generatedPassword);
+  //     QuerySnapshot snapshot = await _firestore
+  //         .collection('users')
+  //         .doc(user.uid)
+  //         .collection('passwords')
+  //         .where('platform', isEqualTo: platform)
+  //         .get();
+
+  //     if (snapshot.docs.isNotEmpty) {
+  //       // Update the existing document
+  //       await _firestore
+  //           .collection('users')
+  //           .doc(user.uid)
+  //           .collection('passwords')
+  //           .doc(snapshot.docs.first.id)
+  //           .update({
+  //         'password': encryptedPassword,
+  //         'created_at': FieldValue.serverTimestamp(),
+  //       });
+  //       CustomSnackBar.show(
+  //           context, 'Password updated successfully!', Colors.yellow,
+  //           textColor: Colors.black);
+  //       Provider.of<NotificationsProvider>(context, listen: false)
+  //           .addNotification(
+  //               'Password Updated', 'Password for $platform updated', 'update');
+  //     } else {
+  //       // Create a new document
+  //       await _firestore
+  //           .collection('users')
+  //           .doc(user.uid)
+  //           .collection('passwords')
+  //           .add({
+  //         'platform': platform,
+  //         'password': encryptedPassword,
+  //         'created_at': FieldValue.serverTimestamp(),
+  //       });
+  //       CustomSnackBar.show(
+  //           context, 'Password saved successfully!', Color(0xFF00FF7F),
+  //           textColor: Colors.black);
+  //       Provider.of<NotificationsProvider>(context, listen: false)
+  //           .addNotification(
+  //               'Password Saved', 'Password for $platform saved', 'success');
+  //     }
+
+  //     platformController.clear();
+  //   } else {
+  //     CustomSnackBar.show(context, 'User not logged in.', Colors.red);
+  //   }
+  //   setState(() {
+  //     isLoading = false;
+  //   });
+  // }
+
   void _savePassword() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+
     setState(() {
-      isLoading = true;
+      _isLoading = true;
     });
 
-    String platform = platformController.text.trim().toLowerCase();
+    final platform = _platformController.text.trim().toLowerCase();
 
-    if (generatedPassword.isEmpty) {
+    if (_generatedPassword.isEmpty) {
       CustomSnackBar.show(context, 'Please generate a password.', Colors.red);
       setState(() {
-        isLoading = false;
+        _isLoading = false;
       });
       return;
     }
 
-    User? user = _auth.currentUser;
-    if (user != null) {
-      QuerySnapshot snapshot = await _firestore
+    final user = _auth.currentUser;
+    if (user == null) {
+      CustomSnackBar.show(context, 'User not logged in.', Colors.red);
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      // Retrieve the encryption key from secure storager
+      String? encryptionKey = await SecureStorageUtil.getEncryptionKeyLocally();
+      if (encryptionKey == null) {
+        print(
+            'Encryption key not found locally, fetching from Firestore...........................................................');
+        encryptionKey = await SecureStorageUtil.getEncryptionKeyFromFirestore();
+      }
+
+      if (encryptionKey == null) {
+        throw Exception('Encryption key not found');
+      }
+      print(
+          'Encryption Key:................................................................ $encryptionKey');
+      if (encryptionKey == null) {
+        throw Exception('Encryption key not found');
+      }
+
+      // Encrypt the password using the encryption key
+      final encryptedPassword =
+          EncryptionUtil.encryptPassword(_generatedPassword, encryptionKey);
+
+      print(
+          'encrypted password:................................................................ $encryptedPassword');
+
+      final snapshot = await _firestore
           .collection('users')
           .doc(user.uid)
           .collection('passwords')
@@ -73,59 +182,60 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
           .get();
 
       if (snapshot.docs.isNotEmpty) {
-        // Update the existing document
+        // Update existing document
         await _firestore
             .collection('users')
             .doc(user.uid)
             .collection('passwords')
             .doc(snapshot.docs.first.id)
             .update({
-          'password': generatedPassword,
+          'password': encryptedPassword,
           'created_at': FieldValue.serverTimestamp(),
         });
         CustomSnackBar.show(
             context, 'Password updated successfully!', Colors.yellow,
             textColor: Colors.black);
-        Provider.of<NotificationsProvider>(context, listen: false)
-            .addNotification(
-                'Password Updated', 'Password for $platform updated', 'update');
       } else {
-        // Create a new document
+        // Create new document
         await _firestore
             .collection('users')
             .doc(user.uid)
             .collection('passwords')
             .add({
           'platform': platform,
-          'password': generatedPassword,
+          'password': encryptedPassword,
           'created_at': FieldValue.serverTimestamp(),
         });
         CustomSnackBar.show(
             context, 'Password saved successfully!', Color(0xFF00FF7F),
             textColor: Colors.black);
-        Provider.of<NotificationsProvider>(context, listen: false)
-            .addNotification(
-                'Password Saved', 'Password for $platform saved', 'success');
       }
 
-      platformController.clear();
-    } else {
-      CustomSnackBar.show(context, 'User not logged in.', Colors.red);
-    }
+      Provider.of<NotificationsProvider>(context, listen: false)
+          .addNotification(
+        snapshot.docs.isNotEmpty ? 'Password Updated' : 'Password Saved',
+        'Password for $platform ${snapshot.docs.isNotEmpty ? 'updated' : 'saved'}',
+        snapshot.docs.isNotEmpty ? 'update' : 'success',
+      );
 
-    setState(() {
-      isLoading = false;
-    });
+      _platformController.clear();
+    } catch (e) {
+      CustomSnackBar.show(context, 'Error saving password: $e', Colors.red);
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _copyToClipboard() {
-    Clipboard.setData(ClipboardData(text: generatedPassword));
+    Clipboard.setData(ClipboardData(text: _generatedPassword));
   }
 
   @override
   Widget build(BuildContext context) {
     return AbsorbPointer(
-      absorbing: isLoading,
+      absorbing: _isLoading,
       child: Scaffold(
         resizeToAvoidBottomInset: true,
         body: Stack(
@@ -215,7 +325,7 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                                               textEditingController,
                                           FocusNode focusNode,
                                           VoidCallback onFieldSubmitted) {
-                                        platformController.text =
+                                        _platformController.text =
                                             textEditingController.text;
                                         return CustomTextField(
                                           controller: textEditingController,
@@ -272,7 +382,7 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                                         FocusScope.of(context).unfocus();
 
                                         setState(() {
-                                          platformController.text = selection;
+                                          _platformController.text = selection;
                                         });
                                       },
                                     ),
@@ -343,7 +453,7 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                                         FocusScope.of(context).unfocus(); //
                                         if (_formKey.currentState!.validate()) {
                                           setState(() {
-                                            generatedPassword =
+                                            _generatedPassword =
                                                 _generatePassword();
                                           });
                                         }
@@ -356,7 +466,7 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                               ),
                             ),
                             SizedBox(height: 20),
-                            if (generatedPassword.isNotEmpty)
+                            if (_generatedPassword.isNotEmpty)
                               Card(
                                 elevation: 10,
                                 shape: RoundedRectangleBorder(
@@ -394,7 +504,7 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                                         children: [
                                           Flexible(
                                             child: Text(
-                                              generatedPassword,
+                                              _generatedPassword,
                                               style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.bold,
@@ -416,7 +526,7 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                             SizedBox(height: 20),
                             Align(
                               alignment: Alignment.bottomCenter,
-                              child: generatedPassword.isNotEmpty
+                              child: _generatedPassword.isNotEmpty
                                   ? Container(
                                       margin: EdgeInsets.all(16.0),
                                       width: double.infinity,
@@ -476,7 +586,7 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen> {
                 ),
               ],
             ),
-            if (isLoading)
+            if (_isLoading)
               Positioned.fill(
                 child: Container(
                   color: Colors.black.withOpacity(0.5),

@@ -8,6 +8,7 @@ import 'package:password_manager/utills/customTextField.dart';
 import 'package:password_manager/utills/snakebar.dart';
 import 'package:password_manager/utills/sound.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -17,7 +18,8 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen>
+    with TickerProviderStateMixin {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController currentPinController = TextEditingController();
   final TextEditingController newPinController = TextEditingController();
@@ -32,11 +34,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String phoneNumber = 'Phone Number';
   bool isLoading = true;
   bool isChangingPassword = false;
+  AnimationController? _animationController;
+  Animation<double>? _animation;
   @override
   void initState() {
     super.initState();
     user = _auth.currentUser;
     _fetchUserData();
+    _animationController = AnimationController(
+      duration: const Duration(seconds: 1),
+      vsync: this,
+    );
+    _animation = CurvedAnimation(
+      parent: _animationController!,
+      curve: Curves.easeIn,
+    );
+    _animationController!.forward();
   }
 
   void _fetchUserData() async {
@@ -872,7 +885,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Content
           Center(
             child: isLoading
-                ? CircularProgressIndicator()
+                ? _buildSkeletonLoading()
                 : Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: ListView(
@@ -894,242 +907,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         //   ],
                         // ),
                         SizedBox(height: 20),
-                        Card(
-                          elevation: 10,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  // Navy Blue
-                                  const Color.fromARGB(
-                                      255, 0, 191, 255) // Deep Sky Blue
-                                  ,
-                                  const Color.fromARGB(255, 0, 19, 128),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: const EdgeInsets.all(8.0),
-                            child: ListTile(
-                              title: RichText(
-                                text: TextSpan(
-                                  children: [
-                                    TextSpan(
-                                      text: 'Name: ',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                        fontSize:
-                                            16, // Same font size as Change Password
-                                      ),
-                                    ),
-                                    TextSpan(
-                                      text: userName,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.normal,
-                                        color: Colors.white,
-                                        fontSize:
-                                            16, // Same font size as Change Password
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              trailing:
-                                  Icon(Icons.person, color: Colors.white70),
-                            ),
+                        _buildAnimatedCard(
+                          child: _buildCard(
+                            title: 'Name: $userName',
+                            icon: Icons.person,
+                            gradientColors: [
+                              const Color.fromARGB(255, 0, 191, 255),
+                              const Color.fromARGB(255, 0, 19, 128),
+                            ],
                           ),
                         ),
                         SizedBox(height: 20),
-                        Card(
-                          elevation: 10,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  const Color.fromARGB(
-                                      255, 34, 134, 139), // Forest Green
-                                  const Color.fromARGB(
-                                      255, 50, 205, 50) // Lime Green
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: const EdgeInsets.all(8.0),
-                            child: ListTile(
-                              title: RichText(
-                                text: TextSpan(
-                                  children: [
-                                    TextSpan(
-                                      text: 'Phone: ',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                        fontSize:
-                                            16, // Same font size as Change Password
-                                      ),
-                                    ),
-                                    TextSpan(
-                                      text: phoneNumber,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.normal,
-                                        color: Colors.white,
-                                        fontSize:
-                                            16, // Same font size as Change Password
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              trailing:
-                                  Icon(Icons.phone, color: Colors.white70),
-                            ),
+                        _buildAnimatedCard(
+                          child: _buildCard(
+                            title: 'Phone: $phoneNumber',
+                            icon: Icons.phone,
+                            gradientColors: [
+                              const Color.fromARGB(255, 34, 134, 139),
+                              const Color.fromARGB(255, 50, 205, 50),
+                            ],
                           ),
                         ),
                         SizedBox(height: 20),
-                        Card(
-                          elevation: 10,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  const Color.fromARGB(255, 0, 128, 128),
-                                  const Color.fromARGB(255, 0, 255, 255)
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: const EdgeInsets.all(8.0),
-                            child: ListTile(
-                              title: Text(
-                                'Change Password',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  fontSize: 16, // Ensure font size consistency
-                                ),
-                              ),
-                              trailing: Icon(Icons.lock, color: Colors.white70),
-                              onTap: _changePassword,
-                            ),
+                        _buildAnimatedCard(
+                          child: _buildCard(
+                            title: 'Change Password',
+                            icon: Icons.lock,
+                            gradientColors: [
+                              const Color.fromARGB(255, 0, 128, 128),
+                              const Color.fromARGB(255, 0, 255, 255),
+                            ],
+                            onTap: _changePassword,
                           ),
                         ),
                         SizedBox(height: 20),
-                        Card(
-                          elevation: 10,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  const Color.fromARGB(255, 255, 165, 0),
-                                  const Color.fromARGB(255, 255, 215, 0)
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: const EdgeInsets.all(8.0),
-                            child: ListTile(
-                              title: Text(
-                                'Help and Support',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  fontSize: 16, // Ensure font size consistency
-                                ),
-                              ),
-                              trailing: Icon(Icons.help, color: Colors.white70),
-                              onTap: _helpAndSupport,
-                            ),
+                        _buildAnimatedCard(
+                          child: _buildCard(
+                            title: 'Help and Support',
+                            icon: Icons.help,
+                            gradientColors: [
+                              const Color.fromARGB(255, 255, 165, 0),
+                              const Color.fromARGB(255, 255, 215, 0),
+                            ],
+                            onTap: _helpAndSupport,
                           ),
                         ),
                         SizedBox(height: 20),
-                        Card(
-                          elevation: 10,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  const Color.fromARGB(
-                                      255, 255, 69, 0), // Orange Red
-                                  const Color.fromARGB(
-                                      255, 255, 140, 0) // Dark Orange
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: const EdgeInsets.all(8.0),
-                            child: ListTile(
-                              title: Text(
-                                'Report an Issue',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  fontSize: 16, // Ensure font size consistency
-                                ),
-                              ),
-                              trailing: Icon(Icons.report_problem,
-                                  color: Colors.white70),
-                              onTap: _reportIssue,
-                            ),
+                        _buildAnimatedCard(
+                          child: _buildCard(
+                            title: 'Report an Issue',
+                            icon: Icons.report_problem,
+                            gradientColors: [
+                              const Color.fromARGB(255, 255, 69, 0),
+                              const Color.fromARGB(255, 255, 140, 0),
+                            ],
+                            onTap: _reportIssue,
                           ),
                         ),
                         SizedBox(height: 20),
-                        Card(
-                          elevation: 10,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  const Color.fromARGB(255, 77, 2, 2),
-                                  const Color.fromARGB(255, 255, 84, 87)
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            padding: const EdgeInsets.all(8.0),
-                            child: ListTile(
-                              title: Text(
-                                'Logout',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  fontSize: 16, // Ensure font size consistency
-                                ),
-                              ),
-                              trailing:
-                                  Icon(Icons.logout, color: Colors.white70),
-                              onTap: _showLogoutConfirmationDialog,
-                            ),
+                        _buildAnimatedCard(
+                          child: _buildCard(
+                            title: 'Logout',
+                            icon: Icons.logout,
+                            gradientColors: [
+                              const Color.fromARGB(255, 77, 2, 2),
+                              const Color.fromARGB(255, 255, 84, 87),
+                            ],
+                            onTap: _showLogoutConfirmationDialog,
                           ),
                         ),
                       ],
@@ -1137,6 +981,250 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSkeletonLoading() {
+    return Shimmer.fromColors(
+      baseColor: Colors.black.withValues(alpha: 0.5), // Dark base color
+      highlightColor: Colors.black
+          .withValues(alpha: 0.2), // Slightly lighter highlight color
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            SizedBox(height: 20),
+            // Skeleton for Name Card
+            Card(
+              elevation: 10,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.grey[800]!,
+                      Colors.grey[900]!,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.all(8.0),
+                child: ListTile(
+                  title: Container(
+                    width: double.infinity,
+                    height: 16,
+                    color: Colors.grey[600],
+                  ),
+                  trailing: Icon(Icons.person, color: Colors.grey[600]),
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+
+            // Skeleton for Phone Card
+            Card(
+              elevation: 10,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.grey[800]!,
+                      Colors.grey[900]!,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.all(8.0),
+                child: ListTile(
+                  title: Container(
+                    width: double.infinity,
+                    height: 16,
+                    color: Colors.grey[600],
+                  ),
+                  trailing: Icon(Icons.phone, color: Colors.grey[600]),
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+
+            // Skeleton for Change Password Card
+            Card(
+              elevation: 10,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.grey[800]!,
+                      Colors.grey[900]!,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.all(8.0),
+                child: ListTile(
+                  title: Container(
+                    width: double.infinity,
+                    height: 16,
+                    color: Colors.grey[600],
+                  ),
+                  trailing: Icon(Icons.lock, color: Colors.grey[600]),
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+
+            // Skeleton for Help and Support Card
+            Card(
+              elevation: 10,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.grey[800]!,
+                      Colors.grey[900]!,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.all(8.0),
+                child: ListTile(
+                  title: Container(
+                    width: double.infinity,
+                    height: 16,
+                    color: Colors.grey[600],
+                  ),
+                  trailing: Icon(Icons.help, color: Colors.grey[600]),
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+
+            // Skeleton for Report an Issue Card
+            Card(
+              elevation: 10,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.grey[800]!,
+                      Colors.grey[900]!,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.all(8.0),
+                child: ListTile(
+                  title: Container(
+                    width: double.infinity,
+                    height: 16,
+                    color: Colors.grey[600],
+                  ),
+                  trailing: Icon(Icons.report_problem, color: Colors.grey[600]),
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+
+            // Skeleton for Logout Card
+            Card(
+              elevation: 10,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.grey[800]!,
+                      Colors.grey[900]!,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.all(8.0),
+                child: ListTile(
+                  title: Container(
+                    width: double.infinity,
+                    height: 16,
+                    color: Colors.grey[600],
+                  ),
+                  trailing: Icon(Icons.logout, color: Colors.grey[600]),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedCard({required Widget child}) {
+    return FadeTransition(
+      opacity: _animation!,
+      child: child,
+    );
+  }
+
+  Widget _buildCard({
+    required String title,
+    required IconData icon,
+    required List<Color> gradientColors,
+    VoidCallback? onTap,
+  }) {
+    return Card(
+      elevation: 10,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: gradientColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        padding: const EdgeInsets.all(8.0),
+        child: ListTile(
+          title: Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              fontSize: 16,
+            ),
+          ),
+          trailing: Icon(icon, color: Colors.white70),
+          onTap: onTap,
+        ),
       ),
     );
   }
