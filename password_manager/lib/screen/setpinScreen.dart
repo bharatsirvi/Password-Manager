@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:password_manager/provider/notificationProvider.dart';
 import 'package:password_manager/routes.dart';
@@ -7,6 +8,7 @@ import 'package:password_manager/services/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:password_manager/utills/customTextField.dart';
 import 'package:password_manager/utills/generateEncrption.dart';
+import 'package:password_manager/utills/internetConnect.dart';
 import 'package:password_manager/utills/secure_storage.dart';
 import 'package:password_manager/utills/snakebar.dart';
 import 'package:provider/provider.dart';
@@ -29,15 +31,41 @@ class _SetPinScreenState extends State<SetPinScreen> {
 
   bool _isNewPinVisible = false;
   bool _isConfirmPinVisible = false;
-
   bool isLoading = false;
+
+  final ConnectivityService _connectivityService = ConnectivityService();
+  bool _isConnected = true;
+  // Check initial connectivity status
+  Future<void> _checkConnectivity() async {
+    bool isConnected = await _connectivityService.isConnected();
+    setState(() {
+      _isConnected = isConnected;
+    });
+  }
+
+  // Listen for connectivity changes
+  void _listenForConnectivityChanges() {
+    _connectivityService.connectivityStream.listen((result) {
+      setState(() {
+        _isConnected = result != ConnectivityResult.none;
+      });
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _checkConnectivity();
+    _listenForConnectivityChanges();
+  }
+
   void _submitPin() async {
     if (_formKey.currentState!.validate()) {
       if (_setPinController.text == _confirmPinController.text) {
         setState(() {
           isLoading = true;
         });
-        await Future.delayed(Duration(milliseconds: 1000));
+        await Future.delayed(Duration(milliseconds: 500));
         User? user = _auth.currentUser;
         if (user != null) {
           await _userService.updateUserPin(
@@ -86,10 +114,12 @@ class _SetPinScreenState extends State<SetPinScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Scaffold(
       body: isLoading
-          ? _buildNextScreenSkeleton()
+          ? _buildNextScreenSkeleton(_isConnected)
           : Stack(
               children: [
                 // Gradient background color
@@ -215,13 +245,31 @@ class _SetPinScreenState extends State<SetPinScreen> {
                     ),
                   ),
                 ),
+                if (!_isConnected)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: EdgeInsets.all(16),
+                      color: const Color.fromARGB(255, 88, 15, 10),
+                      child: Text(
+                        'No internet connection! please check your connection',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
               ],
             ),
     );
   }
 }
 
-Widget _buildNextScreenSkeleton() {
+Widget _buildNextScreenSkeleton(bool _isConnected) {
   return Scaffold(
     appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -304,7 +352,25 @@ Widget _buildNextScreenSkeleton() {
             ),
           ),
         ),
-      )
+      ),
+      if (!_isConnected)
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: EdgeInsets.all(16),
+            color: const Color.fromARGB(255, 88, 15, 10),
+            child: Text(
+              'No internet connection! please check your connection',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
     ]),
     bottomNavigationBar: Container(
       decoration: BoxDecoration(

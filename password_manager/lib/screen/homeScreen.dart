@@ -1,15 +1,48 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:password_manager/screen/generatePasswordScreen.dart';
+import 'package:password_manager/screen/splashScreen.dart';
 import 'package:password_manager/screen/viewpasswordScreen.dart';
 import 'package:flutter/services.dart';
+import 'package:password_manager/utills/internetConnect.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final ConnectivityService _connectivityService = ConnectivityService();
+  bool _isConnected = true;
+
+  // Check initial connectivity status
+  Future<void> _checkConnectivity() async {
+    bool isConnected = await _connectivityService.isConnected();
+    setState(() {
+      _isConnected = isConnected;
+    });
+  }
+
+  // Listen for connectivity changes
+  void _listenForConnectivityChanges() {
+    _connectivityService.connectivityStream.listen((result) {
+      setState(() {
+        _isConnected = result != ConnectivityResult.none;
+      });
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _checkConnectivity();
+    _listenForConnectivityChanges();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    print(
-        "Home Screen build called ............................................");
     return Scaffold(
       body: Stack(
         children: [
@@ -148,6 +181,24 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
+          if (!_isConnected)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: EdgeInsets.all(16),
+                color: const Color.fromARGB(255, 88, 15, 10),
+                child: Text(
+                  'No internet connection! please check your connection',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
         ],
       ),
     );

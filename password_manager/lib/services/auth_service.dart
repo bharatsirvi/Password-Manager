@@ -71,7 +71,7 @@ class AuthService {
           print(
               "Auto retrieval timeout...............................................");
         },
-        timeout: Duration(seconds: 60),
+        timeout: Duration(seconds: 30),
       );
     } catch (e) {
       print(

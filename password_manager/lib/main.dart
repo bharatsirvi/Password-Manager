@@ -1,16 +1,26 @@
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:password_manager/provider/notificationProvider.dart';
 
 import 'package:password_manager/routes.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:password_manager/screen/generatepasswordScreen.dart';
+import 'package:password_manager/screen/homeScreen.dart';
+import 'package:password_manager/screen/loginScreen.dart';
+import 'package:password_manager/screen/navigationScreen.dart';
+import 'package:password_manager/screen/profileScreen.dart';
 import 'package:password_manager/screen/setpinScreen.dart';
+import 'package:password_manager/screen/signupScreen.dart';
 import 'package:password_manager/screen/splashScreen.dart';
+import 'package:password_manager/screen/viewpasswordScreen.dart';
 
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
 void main() async {
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   // WidgetsFlutterBinding.ensureInitialized();
   // await Firebase.initializeApp();
   // runApp(MyApp());
@@ -19,6 +29,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: AndroidProvider.playIntegrity,
   );
 
   runApp(
@@ -31,12 +45,62 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+  bool _wasPaused = false;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    print(
+        'AppLifecycleState:...........................................................................main   hai ye  $state');
+
+    if (state == AppLifecycleState.paused) {
+      _wasPaused = true;
+    } else if (state == AppLifecycleState.resumed && _wasPaused) {
+      _wasPaused = false;
+      print(
+          "Navigating to SplashScreen .................................................");
+
+      navigatorKey.currentState?.pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              SplashScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+          transitionDuration:
+              Duration(milliseconds: 500), // Adjust duration as needed
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'Password Manager',
       theme: ThemeData(

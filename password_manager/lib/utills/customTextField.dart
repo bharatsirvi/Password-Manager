@@ -5,6 +5,8 @@ class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
   final String labelText;
   final String? hintText;
+  final String? helperText;
+  final String? semanticCounterText;
   final TextStyle? hintStyle;
   final TextInputType keyboardType;
   final bool autovalidate;
@@ -28,6 +30,7 @@ class CustomTextField extends StatelessWidget {
   final EdgeInsetsGeometry? contentPadding;
   final TextStyle? labelStyle;
   final TextStyle? style;
+  final bool? autoFocus;
 
   final String? prefixText;
 
@@ -60,12 +63,16 @@ class CustomTextField extends StatelessWidget {
     this.labelStyle,
     this.style,
     this.prefixText,
+    this.autoFocus,
+    this.helperText,
+    this.semanticCounterText,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
+      autofocus: autoFocus ?? false,
       onChanged: onChanged,
       autovalidateMode: autovalidate
           ? AutovalidateMode.onUserInteraction
@@ -82,9 +89,11 @@ class CustomTextField extends StatelessWidget {
       maxLength: maxLength,
       maxLines: maxLines,
       decoration: InputDecoration(
+        semanticCounterText: semanticCounterText,
         counterText: counterText,
         prefixText: prefixText,
         labelText: labelText,
+        helperText: helperText,
         labelStyle: labelStyle ??
             TextStyle(
               color: Colors.white.withOpacity(0.8),

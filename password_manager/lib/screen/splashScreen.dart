@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
@@ -8,6 +9,7 @@ import 'package:password_manager/screen/setpinScreen.dart';
 import 'package:password_manager/screen/signupScreen.dart';
 import 'package:password_manager/utills/encryption.dart';
 import 'package:password_manager/utills/generateEncrption.dart';
+import 'package:password_manager/utills/internetConnect.dart';
 import 'package:password_manager/utills/secure_storage.dart';
 import 'package:provider/provider.dart';
 import 'package:password_manager/provider/notificationProvider.dart';
@@ -26,14 +28,35 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+    _checkConnectivity();
+    _listenForConnectivityChanges();
     _startFadeAnimation();
     _loadNotificationsAndNavigate();
+  }
+
+  final ConnectivityService _connectivityService = ConnectivityService();
+  bool _isConnected = true;
+  // Check initial connectivity status
+  Future<void> _checkConnectivity() async {
+    bool isConnected = await _connectivityService.isConnected();
+    setState(() {
+      _isConnected = isConnected;
+    });
+  }
+
+  // Listen for connectivity changes
+  void _listenForConnectivityChanges() {
+    _connectivityService.connectivityStream.listen((result) {
+      setState(() {
+        _isConnected = result != ConnectivityResult.none;
+      });
+    });
   }
 
 // Usage
 
   Future<void> _loadNotificationsAndNavigate() async {
-    await Future.delayed(Duration(seconds: 3));
+    await Future.delayed(Duration(milliseconds: 300));
 
     final prefs = await SharedPreferences.getInstance();
     final notificationsString = prefs.getString('notifications');
@@ -90,89 +113,119 @@ class _SplashScreenState extends State<SplashScreen> {
     }
   }
 
-  _startFadeAnimation() async {
-    await Future.delayed(Duration(
-        milliseconds: 500)); // Delay before starting the fade animation
-    setState(() {
-      _visible = true;
+  _startFadeAnimation() {
+    Future.delayed(Duration(milliseconds: 300), () {
+      setState(() {
+        _visible = true;
+      });
     });
+    // Delay before starting the fade animation
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              const Color.fromARGB(255, 7, 57, 97),
-              const Color.fromARGB(255, 0, 8, 17)
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedOpacity(
-                opacity: _visible ? 1.0 : 0.0,
-                duration: Duration(seconds: 2),
-                child: Column(
-                  children: [
-                    Image.asset(
-                      'assets/images/vaultixLogo.png', // Path to your image file
-                      width: 100,
-                    ),
-                    SizedBox(
-                      height:
-                          10, // Add some space between the image and the text
-                    ),
-                    Text('VAULTIX',
-                        style: TextStyle(
-                          fontSize: 64,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'EzraSemiBold',
-                          color: Colors.white,
-                        )),
-                  ],
-                ),
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color.fromARGB(255, 7, 57, 97),
+                  const Color.fromARGB(255, 0, 8, 17)
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
-              SizedBox(
-                height: 10, // Add some space between the text and the slogan
-              ),
-              AnimatedTextKit(
-                animatedTexts: [
-                  ColorizeAnimatedText(
-                    'Hame Yaad Hai',
-                    textStyle: TextStyle(
-                      fontSize: 24,
-                      fontFamily: 'GranicSlab',
+            ),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedOpacity(
+                    opacity: _visible ? 1.0 : 0.0,
+                    duration: Duration(milliseconds: 300),
+                    child: Column(
+                      children: [
+                        Image.asset(
+                          'assets/images/vaultixLogo.png', // Path to your image file
+                          width: 100,
+                        ),
+                        SizedBox(
+                          height:
+                              10, // Add some space between the image and the text
+                        ),
+                        Text('VAULTIX',
+                            style: TextStyle(
+                              fontSize: 64,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'EzraSemiBold',
+                              color: Colors.white,
+                            )),
+                      ],
                     ),
-                    speed: Duration(milliseconds: 800),
-                    colors: [
-                      const Color.fromARGB(255, 255, 255, 153), // Light Yellow
-                      const Color.fromARGB(255, 255, 255, 0), // Yellow
-                      const Color.fromARGB(255, 255, 165, 0), // Orange
-                      const Color.fromARGB(255, 99, 85, 0), // Gold
+                  ),
+                  SizedBox(
+                    height:
+                        10, // Add some space between the text and the slogan
+                  ),
+                  AnimatedTextKit(
+                    animatedTexts: [
+                      ColorizeAnimatedText(
+                        'Hame Yaad Hai',
+                        textStyle: TextStyle(
+                          fontSize: 24,
+                          fontFamily: 'GranicSlab',
+                        ),
+                        speed: Duration(milliseconds: 500),
+                        colors: [
+                          const Color.fromARGB(
+                              255, 255, 255, 153), // Light Yellow
+                          const Color.fromARGB(255, 255, 255, 0), // Yellow
+                          const Color.fromARGB(255, 255, 165, 0), // Orange
+                          const Color.fromARGB(255, 99, 85, 0), // Gold
+                        ],
+                      ),
                     ],
+                    isRepeatingAnimation: true,
+                    repeatForever: true,
+                  ),
+                  SizedBox(
+                    height:
+                        20, // Add some space between the slogan and the Lottie animation
+                  ),
+                  Lottie.asset(
+                    'assets/animations/splash_animation.json', // Path to your Lottie animation file
+                    width: 300,
                   ),
                 ],
-                isRepeatingAnimation: true,
-                repeatForever: true,
               ),
-              SizedBox(
-                height:
-                    20, // Add some space between the slogan and the Lottie animation
-              ),
-              Lottie.asset(
-                'assets/animations/splash_animation.json', // Path to your Lottie animation file
-                width: 300,
-              ),
-            ],
+            ),
           ),
-        ),
+          if (!_isConnected)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: EdgeInsets.all(16),
+                color: const Color.fromARGB(255, 88, 15, 10),
+                child: Text(
+                  'No internet connection! please check your connection',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

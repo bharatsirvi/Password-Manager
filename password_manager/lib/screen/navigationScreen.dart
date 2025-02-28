@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
+import 'package:password_manager/utills/internetConnect.dart';
 
 import 'package:provider/provider.dart';
 import 'package:password_manager/routes.dart';
@@ -52,7 +54,7 @@ class _BottomNavigationState extends State<BottomNavigation>
   }
 
   void _showLogoutConfirmationDialog() async {
-    await SoundUtil.playSound('sounds/alert.mp3');
+    await SoundUtil.playSound('sounds/warn.mp3');
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -147,21 +149,24 @@ class _BottomNavigationState extends State<BottomNavigation>
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      // Disable default back button behavior
-      onPopInvokedWithResult: (bool result, dynamic data) {
+    return WillPopScope(
+      onWillPop:
+          // Disable default back button behavior
+          () async {
         if (_selectedIndex == 0) {
-          // Close the app if on the Home screen
-
-          SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+          SystemNavigator.pop();
+          return true;
         } else {
-          // Navigate back to the Home screen if on the Profile screen
           setState(() {
             _selectedIndex = 0;
             _appBarTitle = 'Vaultix';
-            _onItemTapped(0);
           });
-          // _pageController.jumpToPage(0);
+          _pageController.animateToPage(
+            0,
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+          return false;
         }
       },
       child: Scaffold(

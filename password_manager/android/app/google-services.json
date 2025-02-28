@@ -12,7 +12,16 @@
           "package_name": "com.example.password_manager"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "187086706775-e1b17qkt5itipvn5hpki047ml0mcfkaq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.password_manager",
+            "certificate_hash": "0c5dd6087f0c1f6762292762f8eab9c7f5367db0"
+          }
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAhRoPsDHl26t9ErXb2os9EBXA_q1-9ORU"
