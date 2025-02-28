@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +14,7 @@ import 'package:password_manager/utills/snakebar.dart';
 import 'package:password_manager/utills/sound.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:vibration/vibration.dart';
 
 class PinScreen extends StatefulWidget {
   @override
@@ -24,6 +27,7 @@ class _PinScreenState extends State<PinScreen> {
   bool isLoading = false;
   bool _isFetch = false;
   String currentPin = "";
+  String _errorMessage = "";
   TextEditingController pinController = TextEditingController();
   List<FocusNode> focusNodes = List.generate(4, (index) => FocusNode());
   final ConnectivityService _connectivityService = ConnectivityService();
@@ -58,6 +62,7 @@ class _PinScreenState extends State<PinScreen> {
   void _verifyPin() async {
     setState(() {
       _isFetch = true;
+      _errorMessage = "";
     });
     String enteredPin = currentPin;
     User? user = _auth.currentUser;
@@ -67,7 +72,9 @@ class _PinScreenState extends State<PinScreen> {
         DocumentSnapshot userDoc =
             await _firestore.collection('users').doc(user.uid).get();
         String storedPassword = userDoc['password'];
-
+        print(
+            "Entered Pin..................................................: $enteredPin");
+        print("Stored Pin: $storedPassword");
         if (enteredPin == storedPassword) {
           setState(() {
             _isFetch = false;
@@ -91,9 +98,11 @@ class _PinScreenState extends State<PinScreen> {
             ),
           );
         } else {
-          // PIN is incorrect
-          CustomSnackBar.show(
-              context, 'Incorrect PIN. Please try again.', Colors.red);
+          Vibration.vibrate(duration: 100); // Vibrate for 100ms
+          _errorMessage = "Invalid Pin"; // Set error message
+          currentPin = "";
+          pinController.clear();
+          _isFetch = false;
         }
       } catch (e) {
         CustomSnackBar.show(
@@ -200,6 +209,27 @@ class _PinScreenState extends State<PinScreen> {
     Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 
+  void _onKeyPressed(String value) async {
+    HapticFeedback.lightImpact();
+    if (value == "backspace") {
+      if (currentPin.isNotEmpty) {
+        setState(() {
+          currentPin = currentPin.substring(0, currentPin.length - 1);
+          pinController.text = currentPin; // Update pinController
+        });
+      }
+    } else if (value == "confirm") {
+      if (currentPin.length == 4) {
+        _verifyPin();
+      }
+    } else if (currentPin.length < 4) {
+      setState(() {
+        currentPin += value;
+        pinController.text = currentPin; // Update pinController
+      });
+    }
+  }
+
   @override
   void dispose() {
     for (var focusNode in focusNodes) {
@@ -233,6 +263,7 @@ class _PinScreenState extends State<PinScreen> {
                     ),
                   ),
                 ),
+
                 SafeArea(
                   child: MediaQuery.removePadding(
                     context: context,
@@ -271,6 +302,10 @@ class _PinScreenState extends State<PinScreen> {
                                     currentPin = value;
                                   });
                                 },
+
+                                keyboardType: TextInputType.none,
+
+                                readOnly: true,
                                 obscureText: true,
                                 obscuringCharacter: '*',
                                 appContext: context,
@@ -309,7 +344,6 @@ class _PinScreenState extends State<PinScreen> {
                                 showCursor: true,
                                 cursorColor: Colors.white,
                                 cursorWidth: 1,
-                                keyboardType: TextInputType.number,
                                 keyboardAppearance: Brightness.dark,
                               ),
                             ),
@@ -320,6 +354,8 @@ class _PinScreenState extends State<PinScreen> {
                     ),
                   ),
                 ),
+                Positioned(
+                    child: _buildNumericKeypad(), bottom: 0, left: 0, right: 0),
                 _isFetch
                     ? Center(
                         child: CircularProgressIndicator(),
@@ -359,139 +395,232 @@ class _PinScreenState extends State<PinScreen> {
             ),
     );
   }
-}
 
-Widget _buildNextScreenSkeleton(bool _isConnected) {
-  return Scaffold(
-    appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor:
-            const Color.fromARGB(255, 2, 36, 76), // Dark blue color
-        title: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/images/vaultixLogo.png', // Replace with your logo asset path
-              height: 40,
+  Widget _buildNextScreenSkeleton(bool _isConnected) {
+    return Scaffold(
+      appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor:
+              const Color.fromARGB(255, 2, 36, 76), // Dark blue color
+          title: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/images/vaultixLogo.png', // Replace with your logo asset path
+                height: 40,
+              ),
+              SizedBox(width: 5),
+              Image.asset(
+                'assets/images/vname4.png', // Replace with your logo asset path
+                height: 25,
+              ),
+            ],
+          ),
+          actions: [
+            NotificationIconWithBadge(),
+            IconButton(icon: Icon(Icons.logout), onPressed: () {}),
+          ]),
+      body: Stack(children: [
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color.fromARGB(255, 59, 84, 105),
+                const Color.fromARGB(255, 2, 36, 76)
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
-            SizedBox(width: 5),
-            Image.asset(
-              'assets/images/vname4.png', // Replace with your logo asset path
-              height: 25,
+          ),
+        ),
+        Center(
+          child: Shimmer.fromColors(
+            baseColor: Colors.black.withOpacity(0.5), // Dark base color
+            highlightColor: Colors.black.withOpacity(0.2),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  SizedBox(
+                    height: 200,
+                    width: 300, // Set a fixed width for the card
+                    child: Card(
+                      elevation: 10,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[800],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  SizedBox(
+                    height: 200,
+                    width: 300, // Set a fixed width for the card
+                    child: Card(
+                      elevation: 10,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[800],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (!_isConnected)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.all(16),
+              color: const Color.fromARGB(255, 88, 15, 10),
+              child: Text(
+                'No internet connection! please check your connection',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ]),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(255, 2, 36, 76), // Dark blue color
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              spreadRadius: 5,
+              blurRadius: 7,
+              offset: Offset(0, -1), // changes position of shadow
             ),
           ],
         ),
-        actions: [
-          NotificationIconWithBadge(),
-          IconButton(icon: Icon(Icons.logout), onPressed: () {}),
-        ]),
-    body: Stack(children: [
-      Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              const Color.fromARGB(255, 59, 84, 105),
-              const Color.fromARGB(255, 2, 36, 76)
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+        child: BottomNavigationBar(
+          backgroundColor: Colors
+              .transparent, // Make background transparent to show container color
+          selectedItemColor: Colors.white, // Selected item color
+          unselectedItemColor: Colors.grey, // Unselected item color
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person),
+              label: 'Account',
+            ),
+          ],
         ),
       ),
-      Center(
-        child: Shimmer.fromColors(
-          baseColor: Colors.black.withOpacity(0.5), // Dark base color
-          highlightColor: Colors.black.withOpacity(0.2),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                SizedBox(
-                  height: 200,
-                  width: 300, // Set a fixed width for the card
-                  child: Card(
-                    elevation: 10,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[800],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
-                SizedBox(
-                  height: 200,
-                  width: 300, // Set a fixed width for the card
-                  child: Card(
-                    elevation: 10,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[800],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                  ),
-                ),
+    );
+  }
+
+  Widget _buildNumericKeypad() {
+    return Column(children: [
+      if (_errorMessage.isNotEmpty) // Show only if there's an error
+        Padding(
+          padding: EdgeInsets.only(bottom: 10),
+          child: Text(
+            _errorMessage,
+            style: TextStyle(
+              color: Colors.red[400],
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      Container(
+        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 30),
+        decoration: BoxDecoration(
+          color: Colors.black54, // Dark card background
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(10),
+            topRight: Radius.circular(10),
+          ),
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildKeypadButton("1"),
+                _buildKeypadButton("2"),
+                _buildKeypadButton("3"),
               ],
             ),
-          ),
-        ),
-      ),
-      if (!_isConnected)
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            padding: EdgeInsets.all(16),
-            color: const Color.fromARGB(255, 88, 15, 10),
-            child: Text(
-              'No internet connection! please check your connection',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-              ),
-              textAlign: TextAlign.center,
+            SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildKeypadButton("4"),
+                _buildKeypadButton("5"),
+                _buildKeypadButton("6"),
+              ],
             ),
-          ),
+            SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildKeypadButton("7"),
+                _buildKeypadButton("8"),
+                _buildKeypadButton("9"),
+              ],
+            ),
+            SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildKeypadButton("backspace", icon: Icons.backspace),
+                _buildKeypadButton("0"),
+                _buildKeypadButton("confirm", icon: Icons.check),
+              ],
+            ),
+          ],
         ),
-    ]),
-    bottomNavigationBar: Container(
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 2, 36, 76), // Dark blue color
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            spreadRadius: 5,
-            blurRadius: 7,
-            offset: Offset(0, -1), // changes position of shadow
-          ),
-        ],
       ),
-      child: BottomNavigationBar(
-        backgroundColor: Colors
-            .transparent, // Make background transparent to show container color
-        selectedItemColor: Colors.white, // Selected item color
-        unselectedItemColor: Colors.grey, // Unselected item color
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Account',
-          ),
-        ],
+    ]);
+  }
+
+  Widget _buildKeypadButton(String value, {IconData? icon}) {
+    return GestureDetector(
+      behavior: HitTestBehavior.deferToChild,
+      onTap: () => _onKeyPressed(value),
+      child: Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(40),
+        ),
+        child: Center(
+          child: icon != null
+              ? Icon(icon, color: Colors.white, size: 24)
+              : Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 24,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }

@@ -298,43 +298,45 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen>
                         content: Text(
                             'A password for $platform already exists. Do you want to update it?'),
                         actions: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                shadowColor: Colors.transparent,
+                          Row(children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                ),
+                                label: Text(
+                                  'Cancel',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                                icon: Icon(Icons.close, color: Colors.red),
+                                onPressed: () {
+                                  Navigator.of(context).pop(false);
+                                },
                               ),
-                              label: Text(
-                                'Cancel',
-                                style: TextStyle(color: Colors.red),
-                              ),
-                              icon: Icon(Icons.close, color: Colors.red),
-                              onPressed: () {
-                                Navigator.of(context).pop(false);
-                              },
                             ),
-                          ),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.yellow,
-                                shadowColor: Colors.transparent,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8),
-                                child: Text(
-                                  'Update',
-                                  style: TextStyle(
-                                    color: Colors.black,
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.yellow,
+                                  shadowColor: Colors.transparent,
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8),
+                                  child: Text(
+                                    'Update',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                    ),
                                   ),
                                 ),
+                                onPressed: () {
+                                  Navigator.of(context).pop(true);
+                                },
                               ),
-                              onPressed: () {
-                                Navigator.of(context).pop(true);
-                              },
-                            ),
-                          ),
+                            )
+                          ]),
                         ],
                       )));
             });
@@ -359,7 +361,6 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen>
             _isLoading = false;
             Navigator.of(context).pop();
           });
-
           return;
         }
       } else {
@@ -390,9 +391,7 @@ class _GeneratePasswordScreenState extends State<GeneratePasswordScreen>
       Navigator.of(context).pop();
 
       _platformController.clear();
-    } catch (e) {
-      CustomSnackBar.show(context, 'Error saving password: $e', Colors.red);
-    }
+    } catch (e) {}
     setState(() {
       _isLoading = false;
       FocusScope.of(context).unfocus();

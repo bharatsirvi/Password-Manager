@@ -1,4 +1,5 @@
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -72,28 +73,30 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     print(
         'AppLifecycleState:...........................................................................main   hai ye  $state');
-
+    User? user = FirebaseAuth.instance.currentUser;
     if (state == AppLifecycleState.paused) {
       _wasPaused = true;
     } else if (state == AppLifecycleState.resumed && _wasPaused) {
       _wasPaused = false;
       print(
           "Navigating to SplashScreen .................................................");
-
-      navigatorKey.currentState?.pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              SplashScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(
-              opacity: animation,
-              child: child,
-            );
-          },
-          transitionDuration:
-              Duration(milliseconds: 500), // Adjust duration as needed
-        ),
-      );
+      if (user != null) {
+        navigatorKey.currentState?.pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                SplashScreen(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+            transitionDuration:
+                Duration(milliseconds: 500), // Adjust duration as needed
+          ),
+        );
+      }
     }
   }
 
